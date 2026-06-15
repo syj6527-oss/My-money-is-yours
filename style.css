@@ -147,6 +147,16 @@
 .spoils-app .sp-rev{margin-top:6px; font-size:.85em; color:var(--ink-soft); font-style:italic; line-height:1.5;}
 .spoils-app .empty-hint{color:var(--ink-soft); font-style:italic; text-align:center; padding:8px;}
 
+/* 로딩 스피너 */
+.spoils-app .sp-loading{display:flex; align-items:center; justify-content:center; gap:8px; padding:18px 8px; color:var(--ink-soft); font-style:italic; font-size:.9em;}
+.spoils-app .sp-spin{width:15px; height:15px; border:2px solid var(--moss-fill); border-top-color:var(--moss); border-radius:50%; display:inline-block; animation:sp-spin .7s linear infinite;}
+@keyframes sp-spin{to{transform:rotate(360deg);}}
+
+/* 전체 리셋 */
+.spoils-app .sp-reset{margin-top:14px; text-align:center;}
+.spoils-app .sp-reset .sp-btn{background:transparent; color:var(--ink-soft); border:1px solid var(--line); box-shadow:none;}
+.spoils-app .sp-reset .sp-btn:hover{color:var(--rosy-deep); border-color:var(--rosy);}
+
 /* 자산 등급 배지 */
 .spoils-app .sp-tier{display:inline-block; margin-left:8px; padding:2px 10px; border-radius:999px; font-size:.66em; font-weight:700; vertical-align:middle; background:linear-gradient(135deg,var(--moss-fill),var(--rosy-fill)); color:var(--rosy-deep);}
 /* 감정사 독설 */

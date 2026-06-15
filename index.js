@@ -102,15 +102,16 @@ function buildPrompt(name, card, chat, lore) {
 - 채팅·로어북·카드에 실제로 등장한 소지품과 재산은 그대로 반영한다.
 - 비어있는 부분은 대상의 처지·성격·세계관에 어울리게 그럴듯하게 채워 지어낸다.
 - items에는 유저가 손에 쥘 수 있는 "자산"만 넣는다. 빚·부채는 items에 절대 넣지 않는다.
-- hidden_debt: 캐릭터의 성격·처지상 빚이 있을 법하면 채운다 (도박빚 / 카드론 / 사채 / 빌리고 안 갚은 돈 등). 아니면 null. 이건 유저에게 보이지 않는 숨은 항목이다.
+- hidden_debt: 캐릭터의 성격·처지상 빚이나 갚을 게 있을 법하면 채운다. 거창한 빚(도박빚/카드론/사채)뿐 아니라 소소한 것도 좋다 — 친구한테 빌린 3만원, 안 갚은 회식비, 반납 안 한 도서관 책, 빌리고 안 돌려준 우산처럼. 금액이 작거나 물건이어도 OK. 없을 것 같으면 null. 유저에게 보이지 않는 숨은 항목이다.
 - 모든 자산은 items에 넣고 category로 분류한다: 현금 / 예적금 / 주식·투자 / 부동산 / 차량 / 귀중품 / 물건.
   현금·통장 잔액·주식도 각 category로. 소소한 소지품·잡동사니는 "물건"으로.
 - 부유하면 값나가는 것을, "찐거지"라면 "물건" category에 거의 무가치한 잡동사니(0원)를 진지한 척 기재한다.
 - 자산 수준과 무관하게, "물건" category에는 거의 쓰레기에 가까운 잡템을 1~3개 반드시 섞는다.
   (예: 한 짝뿐인 양말, 말라붙은 볼펜, 영수증 뭉치, 다 쓴 기프티콘, 바닥에 굴러다니던 동전, 유통기한 지난 사탕)
   부자 주머니에도 잡동사니는 있다. 0원이나 푼돈으로 진지하게 적는다.
-- 각 category 안에서도 구체적이고 서로 다른 품목으로 채운다. 뻔한 일반명사 나열은 피한다.
-  (부동산=구체 매물·지역, 주식·투자=종목/코인명, 차량=구체 모델, 귀중품=구체 명품/보석/시계, 예적금=상품명·통화)
+- 각 category 안에서도 구체적이고 서로 다른 품목으로 채운다. 뻔한 일반명사 나열이나 같은 브랜드·품목 반복은 피한다.
+  (부동산=구체 매물·지역, 주식·투자=종목/코인명, 차량=구체 모델, 예적금=상품명·통화)
+  귀중품은 폭넓게 — 시계·보석·반지·미술품·골동품·악기·명품가방·한정판 수집품·금괴·고급 와인·만년필 등 매번 다른 종류로. 같은 명품 시계만 반복하지 말 것.
 - 금액(value/worth)은 숫자+통화 위주로. 비꼬는 부연은 note에, 금액 옆 괄호는 한두 단어로 짧게.
 - note는 짧고 건조하게. persona는 성격+말투 한 줄 요약, 역시 건조하게.
 - tier는 자산 등급을 위트있는 짧은 라벨로 자유롭게 짓는다 (거지 / 생계형 인간 / 평범한 시민 / 부자 / 상속세의 화신 등, 캐릭터 맞춤).
@@ -281,7 +282,7 @@ function pinToChat(name, text) {
 }
 
 // ── 렌더 ──
-const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null };
+const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null };
 
 function assetLine(it, opts = {}) {
     const btn = opts.trash ? `<button class="sp-mini trash" data-act="trash" data-idx="${it._i}">🗑️ 버리기</button>`
@@ -345,9 +346,12 @@ function renderAppraise(cs) {
     } else assets = `<div class="sp-empty">감정하기를 눌러 ${esc(ui.sel)}의 재산을 감정합니다.</div>`;
 
     const sp = cs.todaySpend;
+    const spendBody = ui.spendBusy === ui.sel
+        ? '<div class="sp-loading"><span class="sp-spin"></span> 오늘 뭐 샀나 뒤지는 중…</div>'
+        : (sp && sp.length ? sp.map(s => `<div class="sp-spend"><div class="ss-n">${esc(s.name)}</div><div class="ss-r">${esc(s.reason)}</div></div>`).join('') : '<div class="sp-empty">버튼을 누르면 오늘 뭘 샀는지 나옵니다.</div>');
     const spendCard = `<div class="sp-card">
       <div class="sp-cardhead"><span class="sp-ttl">🛒 오늘의 소비</span><button class="sp-btn ghost sm" data-act="spend">${sp && sp.length ? '다시 뽑기' : '뽑기'}</button></div>
-      ${sp && sp.length ? sp.map(s => `<div class="sp-spend"><div class="ss-n">${esc(s.name)}</div><div class="ss-r">${esc(s.reason)}</div></div>`).join('') : '<div class="sp-empty">버튼을 누르면 오늘 뭘 샀는지 나옵니다.</div>'}
+      ${spendBody}
     </div>`;
 
     let slip = '<div class="sp-card"><div class="sp-ttl">인수증</div><div class="sp-slip empty">아직 인수한 게 없습니다.</div></div>';
@@ -378,7 +382,8 @@ function renderVault(st) {
       <div class="sp-card">
         <div class="sp-cardhead"><span class="sp-ttl">인수한 재산 <span class="sp-sub">${fmtWon(sumAll(trans))}</span></span>${trans.length ? '<button class="sp-btn ghost sm" data-act="returnall">전체 되돌려주기</button>' : ''}</div>
         ${trans.length ? renderSections(trans, 'vault') : '<div class="sp-empty">인수한 재산이 없습니다.</div>'}
-      </div>`;
+      </div>
+      <div class="sp-reset"><button class="sp-btn ghost sm" data-act="resetall">⟳ 전체 리셋</button></div>`;
 }
 
 function renderLogRow(r) {
@@ -392,7 +397,7 @@ function renderLogRow(r) {
               <div class="sp-diary">${esc(r.review.log || '')}</div>
               <div class="sp-rev">“${esc(r.review.review || '')}”</div>
             </div>`;
-        } else detail = '<div class="sp-review"><div class="empty-hint">후기 불러오는 중…</div></div>';
+        } else detail = '<div class="sp-review"><div class="sp-loading"><span class="sp-spin"></span> 후기 불러오는 중…</div></div>';
     }
     return `<div class="sp-logrow ${open ? 'open' : ''}" data-act="logopen" data-id="${r.id}">
       <span class="li-ic">${esc(r.ic || '•')}</span>
@@ -498,8 +503,17 @@ async function onAction(e) {
         a.rolls += 1; a.jobs = rollPage(); saveState(); render();
     }
     else if (act === 'spend') {
+        ui.spendBusy = ui.sel; render();
         const d = await genSpending(ui.sel);
-        if (d?.items) { cs.todaySpend = d.items.slice(0, 7); saveState(); render(); }
+        ui.spendBusy = null;
+        if (d?.items) { cs.todaySpend = d.items.slice(0, 7); saveState(); }
+        render();
+    }
+    else if (act === 'resetall') {
+        if (!confirm('이 채팅의 전리품 데이터를 전부 초기화할까? (되돌릴 수 없음)')) return;
+        const md = ctx().chatMetadata; if (md) delete md[KEY];
+        ui.openLog = null; ui.spendBusy = null; ui.tab = 'appraise'; ui.sel = ui.chars[0]?.name || ui.sel;
+        saveState(); render(); toastr.info('전리품 초기화 완료');
     }
     else if (act === 'clearlog') { cs.workLog = []; ui.openLog = null; saveState(); render(); }
     else if (act === 'logopen') {
