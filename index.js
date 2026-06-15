@@ -1,5 +1,5 @@
-// 💰 전리품 (Spoils) — v0.4.0
-// 감정(카테고리 분리 + 물건 버리기) → 인수 → 금고 / 알바지옥. chat_metadata 채팅별 격리. 다인원 지원.
+// 💰 전리품 (Spoils) — v0.5.0
+// 감정(카테고리+물건버리기) → 인수 → 금고 / 알바지옥(기록 분리·후기·별점·채팅핀). chat_metadata 채팅별 격리.
 
 const LOG = '[전리품]';
 const KEY = 'spoils';
@@ -7,7 +7,7 @@ const COOLDOWN_MS = 60 * 60 * 1000;
 const CATS = ['현금', '예적금', '주식·투자', '부동산', '차량', '귀중품', '물건'];
 const CAT_ICON = { '현금': '💵', '예적금': '🏦', '주식·투자': '📈', '부동산': '🏠', '차량': '🚗', '귀중품': '💎', '물건': '📦' };
 
-// ── 금액 유틸 ──
+// ── 금액 ──
 function parseWon(s) {
     if (typeof s === 'number') return Math.round(s);
     s = String(s ?? '').replace(/[, ]/g, '');
@@ -30,7 +30,7 @@ function ctx() { return SillyTavern.getContext(); }
 function sumCat(items, cat) { return (items || []).filter(it => it.category === cat).reduce((s, it) => s + parseWon(it.value), 0); }
 function sumAll(items) { return (items || []).reduce((s, it) => s + parseWon(it.value), 0); }
 
-// ── 상태 (chat_metadata 채팅별 격리) ──
+// ── 상태 ──
 function getState() {
     const md = ctx().chatMetadata; if (!md) return null;
     if (!md[KEY]) md[KEY] = { vault: [], userAssets: [], userData: null, chars: {} };
@@ -60,10 +60,8 @@ function candidateChars() {
     return out;
 }
 
-// ── 데이터 수집 + 감정 ──
-function gatherCard(char) {
-    return [char.name ? `이름: ${char.name}` : '', char.description, char.personality, char.scenario].filter(Boolean).join('\n').slice(0, 5000);
-}
+// ── 수집 + 감정 ──
+function gatherCard(char) { return [char.name ? `이름: ${char.name}` : '', char.description, char.personality, char.scenario].filter(Boolean).join('\n').slice(0, 5000); }
 function gatherUserCard() {
     const c = ctx();
     const name = c.name1 || (c.substituteParams ? c.substituteParams('{{user}}') : '') || '유저';
@@ -72,9 +70,7 @@ function gatherUserCard() {
     if (!persona) persona = c.powerUserSettings?.persona_description || '';
     return { name, card: `이름: ${name}\n${persona}`.trim() };
 }
-function gatherChat() {
-    try { return (ctx().chat ?? []).slice(-50).map(m => `${m.name}: ${m.mes}`).join('\n').slice(0, 7000); } catch (e) { return ''; }
-}
+function gatherChat() { try { return (ctx().chat ?? []).slice(-50).map(m => `${m.name}: ${m.mes}`).join('\n').slice(0, 7000); } catch (e) { return ''; } }
 async function gatherLore(char) {
     const c = ctx(); const names = new Set();
     try {
@@ -100,7 +96,6 @@ function buildPrompt(name, card, chat, lore) {
 - 모든 자산은 items에 넣고 category로 분류한다: 현금 / 예적금 / 주식·투자 / 부동산 / 차량 / 귀중품 / 물건.
   현금·통장 잔액·주식도 각 category로. 소소한 소지품·잡동사니는 "물건"으로.
 - 부유하면 값나가는 것을, "찐거지"라면 "물건" category에 거의 무가치한 잡동사니(0원)를 진지한 척 기재한다.
-  (예: 어제 현장에서 묻혀온 모래 몇 줌(0원), 양말에 붙어온 나뭇가지 2개(0원))
 - 금액(value/worth)은 숫자+통화 위주로. 비꼬는 부연은 note에, 금액 옆 괄호는 한두 단어로 짧게.
 - note는 짧고 건조하게. persona는 성격+말투 한 줄 요약, 역시 건조하게.
 - 세계관에 맞는 통화·단위. 대상/채팅과 같은 언어로. 불명확하면 한국어.
@@ -123,26 +118,25 @@ ${lore || '(없음)'}
 === 최근 대화 ===
 ${chat || '(없음)'}`;
 }
-
 function parseResult(raw) {
     let s = String(raw ?? '').trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
-    const a = s.indexOf('{'), b = s.lastIndexOf('}');
-    if (a !== -1 && b > a) s = s.slice(a, b + 1);
+    const a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a !== -1 && b > a) s = s.slice(a, b + 1);
     return JSON.parse(s);
 }
-
+function profileId() { const c = ctx(); return c.extensionSettings?.spoils?.profileId || c.extensionSettings?.connectionManager?.selectedProfile; }
+async function llmJSON(prompt, tokens) {
+    const c = ctx(), pid = profileId();
+    if (!pid) { toastr.warning('설정창(Extensions → 💰 전리품)에서 연결 프로필을 골라줘'); return null; }
+    const resp = await c.ConnectionManagerRequestService.sendRequest(pid, prompt, tokens || 4096);
+    const raw = (typeof resp === 'string') ? resp : (resp?.content ?? '');
+    console.log(LOG, '원문 응답:', raw);
+    return parseResult(raw);
+}
 async function runAppraisal(name, card, lore) {
-    const c = ctx();
-    const profileId = c.extensionSettings?.spoils?.profileId || c.extensionSettings?.connectionManager?.selectedProfile;
-    if (!profileId) { toastr.warning('설정창(Extensions → 💰 전리품)에서 연결 프로필을 골라줘'); return null; }
+    if (!profileId()) { toastr.warning('설정창(Extensions → 💰 전리품)에서 연결 프로필을 골라줘'); return null; }
     toastr.info(`${name} 감정 중…`, '💰 전리품', { timeOut: 0, tag: 'spoils' });
-    try {
-        const resp = await c.ConnectionManagerRequestService.sendRequest(profileId, buildPrompt(name, card, gatherChat(), lore), 4096);
-        const raw = (typeof resp === 'string') ? resp : (resp?.content ?? '');
-        console.log(LOG, '원문 응답:', raw);
-        toastr.clear();
-        return parseResult(raw);
-    } catch (e) {
+    try { const d = await llmJSON(buildPrompt(name, card, gatherChat(), lore), 4096); toastr.clear(); return d; }
+    catch (e) {
         toastr.clear(); console.error(LOG, '감정 실패', e);
         const msg = String(e?.message || e);
         if (/empty|candidate|safety|block/i.test(msg)) toastr.error('모델이 빈 응답을 반환했어. 연결 프로필 안전설정을 끄거나 토큰을 늘려봐.', '', { timeOut: 8000 });
@@ -174,16 +168,38 @@ function ensureAlba(cs) {
         cs.alba = { budget: 3 + Math.floor(Math.random() * 3), rolls: 0, jobs: rollPage(), resetAt: null };
     return cs.alba;
 }
+async function genReview(cs, entry) {
+    const char = ui.chars.find(x => x.name === ui.sel);
+    const tone = cs.data?.persona || (char ? gatherCard(char).slice(0, 1500) : '');
+    const prompt = `캐릭터 "${ui.sel}"가 방금 '${entry.n}' 알바를 하고 왔다 (특이사항: ${entry.note}).
+이 캐릭터의 성격·말투 참고:
+${tone || '(정보 없음)'}
+
+그 알바 경험에 대한 후기를, 캐릭터의 성격과 말투 그대로 작성한다. 데드팬 유지, 과장 금지.
+[출력] JSON 하나만, 코드펜스 없이:
+{ "stars": 1~5 사이 정수(별점), "log": "무슨 일을 했는지 1~2문장 일기체 (사실 위주, 건조)", "review": "그 알바에 대한 캐릭터 말투의 후기 한두 문장" }`;
+    try { return await llmJSON(prompt, 1024); }
+    catch (e) { console.error(LOG, '후기 생성 실패', e); toastr.error('후기 생성 실패. 콘솔 확인.'); return null; }
+}
+function pinToChat(name, text) {
+    const c = ctx();
+    try {
+        const safe = String(text).replace(/[|\n\r]/g, ' ').trim();
+        c.executeSlashCommands(`/sendas name="${String(name).replace(/"/g, '')}" ${safe}`);
+        toastr.success('채팅에 반영했어');
+    } catch (e) { console.error(LOG, '채팅 삽입 실패', e); toastr.error('채팅 삽입 실패. 콘솔 확인.'); }
+}
 
 // ── 렌더 ──
-const ui = { tab: 'appraise', sel: null, $box: null, chars: [] };
+const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null };
 
 function assetLine(it, opts = {}) {
     const btn = opts.trash ? `<button class="sp-mini trash" data-act="trash" data-idx="${it._i}">🗑️ 버리기</button>`
         : opts.ret ? `<button class="sp-mini" data-act="return" data-idx="${it._i}">되돌려주기</button>` : '';
     return `<div class="sp-line ${parseWon(it.value) === 0 ? 'zero' : ''}">
       <span class="ic">${esc(it.icon || CAT_ICON[it.category] || '📦')}</span>
-      <span class="nm">${esc(it.name)}${opts.from ? `<span class="sp-tag from">${esc(opts.from)}</span>` : ''}</span>
+      <span class="nm">${esc(it.name)}</span>
+      ${opts.from ? `<span class="sp-from">${esc(opts.from)}</span>` : ''}
       <span class="vl">${esc(it.value)}</span>
       ${it.note ? `<span class="nt">${esc(it.note)}</span>` : ''}${btn}</div>`;
 }
@@ -202,16 +218,17 @@ function renderSections(items, mode) {
 function render() {
     const st = getState(); if (!st || !ui.$box) return;
     const cs = charState(ui.sel);
-    const tabs = `<div class="sp-tabs">
-      <div class="sp-tab ${ui.tab === 'appraise' ? 'on' : ''}" data-tab="appraise">감정</div>
-      <div class="sp-tab ${ui.tab === 'vault' ? 'on' : ''}" data-tab="vault">금고</div>
-      <div class="sp-tab ${ui.tab === 'work' ? 'on' : ''}" data-tab="work">알바지옥</div></div>`;
+    const top = `<div class="sp-top">
+      <div class="sp-hd"><span class="sp-logo">💰 전리품</span><button class="sp-close" data-act="close" title="닫기">✕</button></div>
+      <div class="sp-tabs">
+        <div class="sp-tab ${ui.tab === 'appraise' ? 'on' : ''}" data-tab="appraise">감정</div>
+        <div class="sp-tab ${ui.tab === 'vault' ? 'on' : ''}" data-tab="vault">금고</div>
+        <div class="sp-tab ${ui.tab === 'work' ? 'on' : ''}" data-tab="work">알바지옥</div>
+      </div></div>`;
     const body = ui.tab === 'appraise' ? renderAppraise(cs) : ui.tab === 'vault' ? renderVault(st) : renderWork(cs);
-    ui.$box.html(`<div class="sp-hd"><span class="sp-logo">💰 전리품</span></div>${tabs}<div class="sp-body">${body}</div>`);
+    ui.$box.html(`${top}<div class="sp-body">${body}</div>`);
 }
-function charPicker() {
-    return `<select class="sp-select" data-act="pickchar">${ui.chars.map(ch => `<option value="${esc(ch.name)}" ${ch.name === ui.sel ? 'selected' : ''}>${esc(ch.name)}</option>`).join('')}</select>`;
-}
+function charPicker() { return `<select class="sp-select" data-act="pickchar">${ui.chars.map(ch => `<option value="${esc(ch.name)}" ${ch.name === ui.sel ? 'selected' : ''}>${esc(ch.name)}</option>`).join('')}</select>`; }
 function charLabel() { return ui.chars.length > 1 ? charPicker() : `<span class="sp-charname">${esc(ui.sel)}</span>`; }
 
 function renderAppraise(cs) {
@@ -260,6 +277,23 @@ function renderVault(st) {
       </div>`;
 }
 
+function renderLogRow(r) {
+    const open = ui.openLog === r.id;
+    let detail = '';
+    if (open) {
+        if (r.review) {
+            const st = Math.max(0, Math.min(5, r.review.stars | 0));
+            detail = `<div class="sp-review">
+              <div class="sp-stars">${'★'.repeat(st)}${'☆'.repeat(5 - st)}<span class="sp-pin" data-act="logpin" data-id="${r.id}" title="채팅에 반영">📌</span></div>
+              <div class="sp-diary">${esc(r.review.log || '')}</div>
+              <div class="sp-rev">“${esc(r.review.review || '')}”</div>
+            </div>`;
+        } else detail = '<div class="sp-review"><div class="empty-hint">후기 불러오는 중…</div></div>';
+    }
+    return `<div class="sp-logrow ${open ? 'open' : ''}" data-act="logopen" data-id="${r.id}">
+      <span class="li-ic">${esc(r.ic || '•')}</span><span class="li-n">${esc(r.n)}</span><span class="li-p ${r.pay > 0 ? '' : 'zero'}">${esc(r.sign)}</span>
+      <span class="li-arrow">${open ? '▴' : '▾'}</span></div>${detail}`;
+}
 function renderWork(cs) {
     const a = ensureAlba(cs);
     const waiting = a.resetAt && Date.now() < a.resetAt;
@@ -270,15 +304,17 @@ function renderWork(cs) {
     else jobs = a.jobs.map((j, i) => `<div class="sp-job"><span class="ji">${esc(j.ic)}</span>
         <div class="jbody"><div class="jn">${esc(j.n)}</div><div class="jp">${j.pay > 0 ? '일당 ' + j.pay + '만원' : '무급'} · ${esc(j.note)}</div></div>
         <button class="sp-btn ghost sm" data-act="work" data-idx="${i}">일하기</button></div>`).join('');
-    const logRows = (cs.workLog || []).length
-        ? cs.workLog.map(r => `<div class="row"><span class="plus">${esc(r.sign)}</span> · ${esc(r.n)} <span class="dim">— ${esc(r.note)}</span></div>`).join('')
-        : '<div class="empty-hint">아직 한 일이 없습니다.</div>';
+    const log = cs.workLog || [];
     return `<div class="sp-charbar">${charLabel()}</div>
       <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div></div>
       <div class="sp-card">
         <div class="sp-cardhead"><span class="sp-ttl">일거리 <span class="sp-budget">${waiting ? '소진' : '굴리기 ' + left + '회 남음'}</span></span>
           <button class="sp-btn ghost sm" data-act="reroll">🎲 새 일거리</button></div>
-        <div class="sp-jobs">${jobs}</div><div class="sp-log">${logRows}</div></div>`;
+        <div class="sp-jobs">${jobs}</div></div>
+      <div class="sp-card">
+        <div class="sp-cardhead"><span class="sp-ttl">알바 기록</span>${log.length ? '<button class="sp-btn ghost sm" data-act="clearlog">🏠 퇴근</button>' : ''}</div>
+        ${log.length ? log.map(renderLogRow).join('') : '<div class="empty-hint">아직 한 일이 없습니다. 항목을 누르면 후기가 떠요.</div>'}
+      </div>`;
 }
 
 // ── 액션 ──
@@ -287,7 +323,8 @@ async function onAction(e) {
     if (!el) { const tab = e.target.closest('.sp-tab'); if (tab) { ui.tab = tab.dataset.tab; render(); } return; }
     const act = el.dataset.act, st = getState(), cs = charState(ui.sel);
 
-    if (act === 'appraise') {
+    if (act === 'close') { ui.popup?.complete?.(1); }
+    else if (act === 'appraise') {
         const data = await appraiseChar(ui.chars.find(x => x.name === ui.sel));
         if (data) { cs.appraised = true; cs.data = { ...data, items: normItems(data) }; cs.handedOver = false; cs.balance = sumCat(cs.data.items, '현금'); saveState(); render(); }
     }
@@ -302,26 +339,22 @@ async function onAction(e) {
         const d = await appraiseUser();
         if (d) { st.userAssets = normItems(d); st.userData = { worth: d.worth, persona: d.persona, verdict: d.verdict }; saveState(); render(); }
     }
-    else if (act === 'trash') {
-        const idx = +el.dataset.idx;
-        if (cs.data?.items) { cs.data.items.splice(idx, 1); saveState(); render(); }
-    }
+    else if (act === 'trash') { const i = +el.dataset.idx; if (cs.data?.items) { cs.data.items.splice(i, 1); saveState(); render(); } }
     else if (act === 'handover') {
         if (!cs.data) return;
         cs.data.items.forEach(m => st.vault.push({ ...m, from: ui.sel }));
-        cs.handedOver = true; cs.balance = 0; cs.alba = null;
-        saveState(); ui.tab = 'vault'; render(); toastr.success(`${ui.sel}의 재산을 인수했습니다.`);
+        cs.handedOver = true; cs.balance = 0; cs.alba = null; saveState(); ui.tab = 'vault'; render();
+        toastr.success(`${ui.sel}의 재산을 인수했습니다.`);
     }
     else if (act === 'return') {
-        const idx = +el.dataset.idx, item = st.vault[idx];
-        st.vault.splice(idx, 1);
+        const i = +el.dataset.idx, item = st.vault[i]; st.vault.splice(i, 1);
         if (item?.from && item.from !== '내 것') charState(item.from).balance += parseWon(item.value);
         saveState(); render();
     }
     else if (act === 'work') {
         const a = ensureAlba(cs), j = a.jobs[+el.dataset.idx]; if (!j) return;
         cs.balance += j.pay * 1e4; a.jobs.splice(+el.dataset.idx, 1);
-        cs.workLog = [{ sign: j.pay > 0 ? `+${j.pay}만원` : '±0', n: j.n, note: j.note }, ...(cs.workLog || [])].slice(0, 12);
+        cs.workLog = [{ id: Date.now() + Math.random().toString(36).slice(2, 6), ic: j.ic, n: j.n, pay: j.pay, note: j.note, sign: j.pay > 0 ? `+${j.pay}만원` : '±0', review: null }, ...(cs.workLog || [])].slice(0, 20);
         saveState(); render();
     }
     else if (act === 'reroll') {
@@ -330,8 +363,23 @@ async function onAction(e) {
         if (a.rolls >= a.budget) { a.resetAt = Date.now() + COOLDOWN_MS; toastr.info(SNARK[Math.floor(Math.random() * SNARK.length)], '알바지옥'); saveState(); render(); return; }
         a.rolls += 1; a.jobs = rollPage(); saveState(); render();
     }
+    else if (act === 'clearlog') { cs.workLog = []; ui.openLog = null; saveState(); render(); }
+    else if (act === 'logopen') {
+        const id = el.dataset.id, entry = (cs.workLog || []).find(x => String(x.id) === String(id)); if (!entry) return;
+        if (String(ui.openLog) === String(entry.id)) { ui.openLog = null; render(); return; }
+        ui.openLog = entry.id; render();
+        if (!entry.review) {
+            const rv = await genReview(cs, entry);
+            if (rv) { entry.review = { stars: Math.max(1, Math.min(5, parseInt(rv.stars) || 3)), log: rv.log, review: rv.review }; saveState(); }
+            if (String(ui.openLog) === String(entry.id)) render();
+        }
+    }
+    else if (act === 'logpin') {
+        const id = el.dataset.id, entry = (cs.workLog || []).find(x => String(x.id) === String(id));
+        if (entry?.review) pinToChat(ui.sel, entry.review.review);
+    }
 }
-function onChange(e) { const el = e.target.closest('[data-act="pickchar"]'); if (el) { ui.sel = el.value; render(); } }
+function onChange(e) { const el = e.target.closest('[data-act="pickchar"]'); if (el) { ui.sel = el.value; ui.openLog = null; render(); } }
 
 setInterval(() => {
     if (!ui.$box || !ui.$box.is(':visible')) return;
@@ -351,11 +399,13 @@ async function openPanel() {
     if (!cands.length) { toastr.warning('캐릭터가 있는 채팅에서 열어줘'); return; }
     ui.chars = cands;
     ui.sel = (ui.sel && cands.find(x => x.name === ui.sel)) ? ui.sel : cands[0].name;
-    ui.tab = 'appraise';
+    ui.tab = 'appraise'; ui.openLog = null;
     const $box = $('<div class="spoils-app"></div>');
     ui.$box = $box; $box.on('click', onAction); $box.on('change', onChange);
     render();
-    await c.callGenericPopup($box[0], c.POPUP_TYPE.DISPLAY, '', { wide: true, allowVerticalScrolling: true });
+    const popup = new c.Popup($box[0], c.POPUP_TYPE.DISPLAY, '', { wide: true, allowVerticalScrolling: true });
+    ui.popup = popup;
+    await popup.show();
 }
 function refreshProfiles(c) {
     const profiles = c.extensionSettings?.connectionManager?.profiles ?? [];

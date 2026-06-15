@@ -1,38 +1,39 @@
-/* 💰 전리품 — 파스텔 수련 연못 (라이트) */
+/* 💰 전리품 — 파스텔 수련 연못 (라이트) v0.5 */
 
-/* 팝업 꽉 채우기 + 둥근 모서리 */
+/* 팝업 꽉 채우기 + 둥근 모서리 + ST 기본 닫기 숨김 */
 .popup:has(.spoils-app){ padding:0; background:#FBF8EC; border-color:#ECE3CE; border-radius:20px; overflow:hidden; }
 .popup:has(.spoils-app) .popup-content,
 .popup:has(.spoils-app) .popup_content{ padding:0; margin:0; }
-.popup:has(.spoils-app) .popup-controls{ padding:10px 14px; }
-/* 우상단 닫기 X — 파스텔 톤 */
-.popup:has(.spoils-app) .popup-button-close{ color:#C57E72; opacity:.85; top:10px; right:12px; }
-.popup:has(.spoils-app) .popup-button-close:hover{ opacity:1; }
+.popup:has(.spoils-app) .popup-controls{ display:none; }
+.popup:has(.spoils-app) .popup-button-close{ display:none; }
 
 .spoils-app{
   --bg:#FBF8EC; --card:#FFFFFF; --card2:#FFFBF1;
   --ink:#3A5142; --ink-soft:#8A9486;
   --moss:#8FA968; --moss-deep:#6E8A4C; --moss-fill:#E9F0D6;
   --rosy:#D89A8E; --rosy-deep:#C57E72; --rosy-fill:#FBE6E0;
-  --mid:#4A93A6; --beige:#FBF6E8;
-  --line:#EDE6D5;
+  --mid:#4A93A6; --beige:#FBF6E8; --line:#EDE6D5;
   --mono: ui-monospace,"SFMono-Regular","Menlo",monospace;
   background:var(--bg); color:var(--ink); width:100%; max-width:none; margin:0; text-align:left;
   border-radius:0; padding:0; overflow:hidden; font-size:15px; line-height:1.45;
   font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
 }
 
-.spoils-app .sp-hd{padding:13px 16px; text-align:center;}
-.spoils-app .sp-logo{font-weight:800; letter-spacing:.06em; font-size:1.15em; color:var(--moss-deep);}
-
-/* 탭 — 알약형 */
+/* 고정 헤더 + 탭 */
+.spoils-app .sp-top{position:sticky; top:0; z-index:6; background:var(--bg); padding-top:4px;
+  box-shadow:0 6px 10px -8px rgba(110,138,76,.3);}
+.spoils-app .sp-hd{display:flex; align-items:center; justify-content:center; position:relative; padding:10px 16px 8px;}
+.spoils-app .sp-logo{font-weight:800; letter-spacing:.06em; font-size:1.12em; color:var(--moss-deep);}
+.spoils-app .sp-close{position:absolute; right:12px; top:8px; width:30px; height:30px; border:none; cursor:pointer;
+  background:var(--rosy-fill); color:var(--rosy-deep); border-radius:50%; font-size:.9em; font-weight:700; line-height:1;}
+.spoils-app .sp-close:hover{background:#F6D2C7;}
 .spoils-app .sp-tabs{display:flex; gap:6px; padding:0 12px 10px;}
 .spoils-app .sp-tab{flex:1; padding:9px 0; text-align:center; cursor:pointer; font-size:.9em;
   color:var(--ink-soft); background:var(--moss-fill); border-radius:999px; user-select:none; transition:.15s;}
 .spoils-app .sp-tab.on{color:#fff; background:var(--moss); font-weight:700;}
 .spoils-app .sp-tab:not(.on):hover{color:var(--ink);}
 
-.spoils-app .sp-body{padding:6px 14px 16px;}
+.spoils-app .sp-body{padding:10px 14px 16px;}
 
 /* 카드 */
 .spoils-app .sp-card{background:var(--card); border:1px solid var(--line); border-radius:16px;
@@ -44,9 +45,9 @@
 .spoils-app .sp-done{margin-top:10px; text-align:right; font-size:.82em; color:var(--rosy-deep);}
 
 .spoils-app .sp-charbar{display:flex; gap:8px; margin-bottom:12px; align-items:center; justify-content:space-between;}
-.spoils-app .sp-charname{font-weight:700; color:var(--moss-deep); font-size:1.02em; padding-left:2px;}
-.spoils-app .sp-select{flex:1; min-width:0; background:var(--card2); color:var(--ink);
-  border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:.92em; font-family:inherit;}
+.spoils-app .sp-charname{font-weight:700; color:var(--moss-deep); font-size:1.02em; padding-left:2px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.spoils-app .sp-bar-btns{display:flex; gap:6px; flex-shrink:0;}
+.spoils-app .sp-select{flex:1; min-width:0; background:var(--card2); color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:.92em; font-family:inherit;}
 
 /* 버튼 */
 .spoils-app .sp-btn{background:var(--moss); color:#fff; border:none; cursor:pointer; font-weight:700;
@@ -56,62 +57,62 @@
 .spoils-app .sp-btn.ghost:hover{background:#DFE9C6;}
 .spoils-app .sp-btn.sm{padding:6px 12px; font-size:.8em;}
 .spoils-app .sp-btn:active{transform:translateY(1px);}
-.spoils-app .sp-mini{background:var(--rosy-fill); border:none; color:var(--rosy-deep); border-radius:999px;
-  padding:5px 10px; font-size:.74em; cursor:pointer; font-family:inherit; white-space:nowrap; font-weight:600;}
+.spoils-app .sp-mini{background:var(--rosy-fill); border:none; color:var(--rosy-deep); border-radius:999px; padding:5px 10px; font-size:.74em; cursor:pointer; font-family:inherit; white-space:nowrap; font-weight:600;}
 .spoils-app .sp-mini:hover{background:#F7D8CF;}
+.spoils-app .sp-mini.trash{background:#FBE9E0;}
 
-/* 명세 줄 — 값을 이름 아래로 쌓아 안 깨지게 */
+/* 명세 줄 — 이름/출처/값/노트 세로 적층 */
 .spoils-app .sp-line{display:grid; grid-template-columns:1.9em 1fr auto;
-  grid-template-areas:"i n b" "i v b" "i note b"; column-gap:8px; align-items:start;
+  grid-template-areas:"i n b" "i from b" "i v b" "i note b"; column-gap:8px; align-items:start;
   padding:9px 2px; border-bottom:1px solid var(--line);}
 .spoils-app .sp-line:last-child{border-bottom:0;}
 .spoils-app .sp-line .ic{grid-area:i; font-size:1.05em; padding-top:1px;}
 .spoils-app .sp-line .nm{grid-area:n; font-weight:600; word-break:break-word;}
-.spoils-app .sp-line .vl{grid-area:v; font-family:var(--mono); color:var(--mid); font-size:.95em; margin-top:1px; overflow-wrap:anywhere;}
-.spoils-app .sp-line .nt{grid-area:note; font-size:.8em; color:var(--ink-soft); font-style:italic; margin-top:2px;}
+.spoils-app .sp-from{grid-area:from; display:inline-block; max-width:100%; margin-top:3px; padding:1px 8px; border-radius:999px;
+  background:var(--rosy-fill); color:var(--rosy-deep); font-size:.66em; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.spoils-app .sp-line .vl{grid-area:v; font-family:var(--mono); color:var(--mid); font-size:.92em; margin-top:2px; overflow-wrap:anywhere;}
+.spoils-app .sp-line .nt{grid-area:note; font-size:.8em; color:var(--ink-soft); font-style:italic; margin-top:3px; line-height:1.4;}
 .spoils-app .sp-line .sp-mini{grid-area:b; align-self:center;}
 .spoils-app .sp-line.zero .vl{color:var(--ink-soft);}
 
-.spoils-app .sp-income{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
-  padding:4px 2px 11px; margin-bottom:5px; border-bottom:1px solid var(--line);}
+.spoils-app .sp-income{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:2px 2px 11px; margin-bottom:5px; border-bottom:1px solid var(--line);}
 .spoils-app .sp-income .lbl{flex-shrink:0; white-space:nowrap; font-size:.85em; color:var(--ink-soft); padding-top:2px;}
 .spoils-app .sp-income .r{text-align:right; min-width:0;}
-.spoils-app .sp-income .amt{font-family:var(--mono); font-size:1.05em; color:var(--moss-deep); font-weight:700; overflow-wrap:anywhere;}
+.spoils-app .sp-income .amt{font-family:var(--mono); font-size:1.02em; color:var(--moss-deep); font-weight:700; overflow-wrap:anywhere;}
 .spoils-app .sp-income .src{display:block; font-size:.76em; color:var(--ink-soft); font-style:italic;}
 
-.spoils-app .sp-total{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
-  margin-top:10px; padding-top:10px; border-top:2px solid var(--moss-fill);}
-.spoils-app .sp-total .lbl{flex-shrink:0; white-space:nowrap; font-size:.85em; color:var(--ink-soft); padding-top:3px;}
-.spoils-app .sp-total .amt{font-family:var(--mono); font-size:1.15em; font-weight:800; text-align:right; overflow-wrap:anywhere; color:var(--ink);}
+/* 총액 — 세로 적층(긴 금액 안 깨지게) */
+.spoils-app .sp-total{display:block; margin-top:11px; padding-top:10px; border-top:2px solid var(--moss-fill);}
+.spoils-app .sp-total .lbl{display:block; font-size:.78em; color:var(--ink-soft); margin-bottom:3px;}
+.spoils-app .sp-total .amt{display:block; font-family:var(--mono); font-size:1.1em; font-weight:800; color:var(--ink); overflow-wrap:anywhere; line-height:1.45;}
 .spoils-app .sp-handover{display:flex; justify-content:flex-end; margin-top:12px;}
 
-.spoils-app .sp-tag{font-size:.66em; padding:2px 7px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:600;}
-.spoils-app .sp-tag.from{background:var(--rosy-fill); color:var(--rosy-deep);}
-
-/* 인수증 — 파스텔 종이 */
-.spoils-app .sp-slip{position:relative; background:var(--beige); border:1.5px dashed var(--rosy);
-  border-radius:14px; padding:16px 16px 18px; font-family:var(--mono); color:var(--ink);}
+/* 인수증 */
+.spoils-app .sp-slip{position:relative; background:var(--beige); border:1.5px dashed var(--rosy); border-radius:14px; padding:16px 16px 18px; font-family:var(--mono); color:var(--ink);}
 .spoils-app .sp-slip.empty{color:var(--ink-soft); text-align:center; font-style:italic; font-family:inherit; padding:24px; border-style:solid; border-color:var(--line); background:var(--card2);}
-.spoils-app .sp-slip .sp-line{border-bottom-color:rgba(216,154,142,.25);}
+.spoils-app .sp-slip .sp-line{border-bottom-color:rgba(216,154,142,.25); grid-template-areas:"i n" "i v";}
 .spoils-app .sp-slip .sp-line .vl{color:var(--mid);}
-.spoils-app .sp-slip .sp-total{border-top-color:rgba(216,154,142,.4);}
 .spoils-app .sp-sh{text-align:center; border-bottom:1px dashed rgba(216,154,142,.5); padding-bottom:9px; margin-bottom:8px;}
 .spoils-app .sp-sh .t{font-size:1.1em; font-weight:800; letter-spacing:.18em; font-family:inherit; color:var(--moss-deep);}
 .spoils-app .sp-sh .s{font-size:.78em; color:var(--ink-soft); margin-top:3px;}
+.spoils-app .sp-slip .sp-total{border-top-color:rgba(216,154,142,.45);}
 .spoils-app .sp-verdict{margin-top:12px; padding-top:9px; border-top:1px dashed rgba(216,154,142,.5); text-align:center; font-style:italic; color:var(--ink-soft); font-family:inherit; font-size:.88em;}
 .spoils-app .sp-memo{margin-top:9px; padding-top:8px; border-top:1px dotted rgba(216,154,142,.4); font-family:inherit; font-size:.8em; color:var(--ink-soft); line-height:1.5;}
 .spoils-app .sp-memo .memo-lbl{color:var(--rosy-deep); font-weight:700; margin-right:5px;}
-.spoils-app .sp-stamp{position:absolute; top:14px; right:10px; border:2.5px solid var(--rosy); color:var(--rosy-deep);
-  font-family:inherit; font-weight:800; font-size:.68em; letter-spacing:.2em; padding:5px 9px; border-radius:6px;
-  transform:rotate(-11deg); opacity:.9; pointer-events:none; background:rgba(255,255,255,.4);}
+.spoils-app .sp-stamp{position:absolute; top:14px; right:10px; border:2.5px solid var(--rosy); color:var(--rosy-deep); font-family:inherit; font-weight:800; font-size:.68em; letter-spacing:.2em; padding:5px 9px; border-radius:6px; transform:rotate(-11deg); opacity:.9; pointer-events:none; background:rgba(255,255,255,.4);}
 
-/* 잔액 카드 */
-.spoils-app .sp-balance{text-align:center; padding:15px; margin-bottom:12px;
-  background:linear-gradient(135deg, var(--moss-fill), var(--rosy-fill)); border-radius:16px;}
+/* 잔액 */
+.spoils-app .sp-balance{text-align:center; padding:15px; margin-bottom:12px; background:linear-gradient(135deg, var(--moss-fill), var(--rosy-fill)); border-radius:16px;}
 .spoils-app .sp-balance .lbl{font-size:.76em; color:var(--ink-soft); letter-spacing:.04em;}
 .spoils-app .sp-balance .amt{font-family:var(--mono); font-size:1.9em; font-weight:800; color:var(--moss-deep); margin-top:3px;}
 
-/* 알바지옥 */
+/* 카테고리 */
+.spoils-app .sp-cat{margin-bottom:4px;}
+.spoils-app .sp-cat-hd{display:flex; justify-content:space-between; align-items:center; font-size:.74em; font-weight:700; color:var(--rosy-deep); letter-spacing:.03em; padding:9px 2px 3px; margin-top:4px; border-bottom:1px solid var(--moss-fill);}
+.spoils-app .sp-cat-sum{font-family:var(--mono); color:var(--ink-soft); font-weight:600;}
+.spoils-app .sp-tag{font-size:.66em; padding:2px 7px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:600; background:var(--rosy-fill); color:var(--rosy-deep);}
+
+/* 알바 일거리 */
 .spoils-app .sp-cardhead{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
 .spoils-app .sp-cardhead .sp-ttl{margin-bottom:0;}
 .spoils-app .sp-budget{color:var(--rosy-deep); font-weight:700; font-size:.92em; margin-left:6px;}
@@ -123,20 +124,19 @@
 .spoils-app .sp-job .jp{font-size:.78em; color:var(--ink-soft);}
 .spoils-app .sp-wait{text-align:center; padding:18px 8px; color:var(--rosy-deep); font-style:italic;}
 .spoils-app .sp-cdt{font-family:var(--mono); font-style:normal; font-weight:700;}
-.spoils-app .sp-log{margin-top:10px; background:var(--card2); border:1px solid var(--line); border-radius:12px;
-  padding:10px 12px; font-size:.82em; color:var(--ink-soft); font-family:var(--mono); max-height:150px; overflow:auto;}
-.spoils-app .sp-log .row{padding:3px 0; border-bottom:1px dotted var(--line);}
-.spoils-app .sp-log .row:last-child{border-bottom:0;}
-.spoils-app .sp-log .plus{color:var(--moss-deep); font-weight:700;}
-.spoils-app .sp-log .dim{opacity:.75;}
-.spoils-app .empty-hint{color:var(--ink-soft); font-style:italic; text-align:center; padding:6px;}
 
-/* 카테고리 섹션 */
-.spoils-app .sp-bar-btns{display:flex; gap:6px; flex-shrink:0;}
-.spoils-app .sp-cat{margin-bottom:4px;}
-.spoils-app .sp-cat-hd{display:flex; justify-content:space-between; align-items:center;
-  font-size:.74em; font-weight:700; color:var(--rosy-deep); letter-spacing:.03em;
-  padding:9px 2px 3px; margin-top:4px; border-bottom:1px solid var(--moss-fill);}
-.spoils-app .sp-cat-sum{font-family:var(--mono); color:var(--ink-soft); font-weight:600;}
-.spoils-app .sp-mini.trash{background:#FBE9E0; color:#C57E72;}
-.spoils-app .sp-mini.trash:hover{background:#F6D2C7;}
+/* 알바 기록 + 후기 */
+.spoils-app .sp-logrow{display:flex; align-items:center; gap:8px; padding:10px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+.spoils-app .sp-logrow.open{background:var(--card2); border-radius:10px 10px 0 0; border-bottom-color:transparent;}
+.spoils-app .sp-logrow .li-ic{font-size:1.1em;}
+.spoils-app .sp-logrow .li-n{flex:1; min-width:0; font-weight:600;}
+.spoils-app .sp-logrow .li-p{font-family:var(--mono); color:var(--moss-deep); font-weight:700; font-size:.9em;}
+.spoils-app .sp-logrow .li-p.zero{color:var(--ink-soft);}
+.spoils-app .sp-logrow .li-arrow{color:var(--ink-soft); font-size:.8em;}
+.spoils-app .sp-review{background:var(--card2); border-radius:0 0 12px 12px; padding:10px 12px 13px; margin-bottom:6px; border-bottom:1px solid var(--line);}
+.spoils-app .sp-stars{font-size:1.05em; color:var(--rosy-deep); letter-spacing:.05em; display:flex; align-items:center; justify-content:space-between;}
+.spoils-app .sp-pin{cursor:pointer; font-size:.95em; padding:3px 6px; border-radius:8px; background:var(--moss-fill);}
+.spoils-app .sp-pin:hover{background:#DFE9C6;}
+.spoils-app .sp-diary{margin-top:8px; font-size:.85em; color:var(--ink); line-height:1.5;}
+.spoils-app .sp-rev{margin-top:6px; font-size:.85em; color:var(--ink-soft); font-style:italic; line-height:1.5;}
+.spoils-app .empty-hint{color:var(--ink-soft); font-style:italic; text-align:center; padding:8px;}
