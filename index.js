@@ -119,6 +119,7 @@ function buildPrompt(name, card, chat, lore) {
   (예: "돈은 많지만 내일 아침 커피 살 현금은 없음", "자산보다 자신감이 더 많은 사람", "세무서가 좋아할 구성")
 - reaction은 유저가 이 인물의 재산을 전부 가져갈 때 인물이 보일 반응을, 그 인물의 말투 그대로 한두 마디 + 상황에 맞는 이모지 1개.
   처지에 맞게: 빈털터리는 절망·매달림("자기야… 나 어떻게 살아 😭"), 부자는 코웃음·무관심, 자존심 강하면 허세 등. 감정적이든 시니컬하든 캐릭터답게.
+- 전체 톤은 그 인물이 실제로 말하듯 자연스럽고 캐주얼하게(딱딱한 보고서체 금지). note·verdict·reaction엔 채팅에 나온 실제 사건·관계·디테일·말버릇을 끌어와 구체적이고 예상 밖이게. 인물(과 유저)의 성격·관계가 자산 구성과 반응에 드러나게. 뻔하지 않게, 웃기게.
 - 세계관에 맞는 통화·단위. 대상/채팅과 같은 언어로. 불명확하면 한국어.
 
 [출력] 아래 JSON 객체 하나만. 코드펜스·설명 없이.
@@ -212,6 +213,16 @@ const JOB_POOL = [
     { ic: '🕯️', n: '장례식장 도우미', pay: 7, note: '분위기 파악이 8할' },
     { ic: '🛗', n: '쿠팡 새벽배송', pay: 9, note: '엘베 없는 빌라 5층' },
     { ic: '🍎', n: '과수원 농활', pay: 6, note: '사과 1톤, 멀쩡한 허리 0개' },
+    { ic: '🛵', n: '배달 라이더', pay: 8, note: '비 오면 수입 2배, 위험 5배' },
+    { ic: '🐟', n: '수산시장 손질', pay: 7, note: '비린내는 영혼까지 스밈' },
+    { ic: '🧹', n: '모텔 객실 청소', pay: 5, note: '본 것은 잊기로 함' },
+    { ic: '📞', n: '콜센터 단기', pay: 5, note: '욕은 기본 옵션' },
+    { ic: '🧁', n: '베이커리 새벽', pay: 6, note: '밀가루 인간이 됨' },
+    { ic: '🪧', n: '1인 시위 대행', pay: 4, note: '내 신념은 아니지만' },
+    { ic: '🧊', n: '횟집 얼음 나르기', pay: 5, note: '손 감각과 잠시 작별' },
+    { ic: '🎅', n: '시즌 한정 산타', pay: 6, note: '무릎에 애들 12명' },
+    { ic: '🛒', n: '마트 카트 정리', pay: 3, note: '주차장이 곧 헬스장' },
+    { ic: '🎤', n: '행사 MC 보조', pay: 5, note: '대본에 없는 애드립 강요' },
 ];
 const SNARK = ['일이 그렇게 안 급한가 봐?', '골라잡을 처지는 아닐 텐데.', '오늘 치 일감은 동났어. 내일 다시 오든가.'];
 const INCIDENTS = [
@@ -229,6 +240,16 @@ const INCIDENTS = [
     '손님이 번호를 물어봄 (정중히 거절)',
     '"오늘만 좀 일찍" 이 세 번째였음',
     '경력에 한 줄도 못 쓸 일이었음',
+    '"이거 원래 네 일 아니야?"를 들음',
+    '단골이 인생 조언을 시전함',
+    '월급날이 슬그머니 미뤄짐',
+    '유니폼이 한 사이즈 작았음',
+    '"열정페이" 라는 단어가 등장함',
+    '사장 반려견이 더 상전이었음',
+    '휴게실 의자가 단 한 개였음',
+    '진상 손님 응대 후 스스로에게 박수침',
+    '사장이 알바보다 자주 사라짐',
+    '퇴근 도장 찍는 법을 끝내 못 배움',
 ];
 function pickIncident() { return Math.random() < 0.5 ? INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)] : null; }
 function rollPage() { return [...JOB_POOL].sort(() => Math.random() - 0.5).slice(0, 3 + Math.floor(Math.random() * 3)); }
@@ -250,7 +271,7 @@ async function genReview(cs, entry) {
     const card = char ? gatherCard(char) : '';
     const voice = recentLinesOf(ui.sel, 6);
     const prompt = `너는 캐릭터 "${ui.sel}" 본인이다. 방금 '${entry.n}' 알바를 하고 왔다 (특이사항: ${entry.note}${entry.incident ? ', ' + entry.incident : ''}).
-아래 정보로 이 캐릭터의 성격과 말투를 정확히 흉내 내서 1인칭으로 후기를 쓴다. 어휘·말버릇·문장 길이·존댓말/반말까지 캐릭터답게. 데드팬 유지, 과장 금지.
+아래 정보로 이 캐릭터의 성격과 말투를 정확히 흉내 내서 1인칭으로 후기를 쓴다. 어휘·말버릇·문장 길이·존댓말/반말까지 캐릭터답게. 자연스럽고 캐주얼하게(보고서체 금지), 데드팬 유지.
 [성격 요약] ${persona || '(없음)'}
 [캐릭터 설정] ${card.slice(0, 1500) || '(없음)'}
 [말투 예시 — 이 캐릭터의 최근 대사]
@@ -262,13 +283,18 @@ ${voice || '(없음)'}
 }
 async function genSpending(name) {
     const base = ui.chars.find(x => x.name === name);
-    const tone = charState(name).data?.persona || (base ? gatherCard(base).slice(0, 800) : '');
-    const prompt = `캐릭터 "${name}"가 오늘 산 것 3~7개를 적는다. 각 품목 + 왜 샀는지 한 줄(데드팬, "이유 모름" 같은 것도 OK).
-다양하게 섞는다: 소소한 생필품(휴지·우유)부터 사치품, 주식·코인·부동산 같은 큰 지출, 즉흥 감정 소비, 계획적인 것까지.
-캐릭터의 성향·처지·기분을 반영. 가끔은 엉뚱하거나 감정적인 것도 (예: "비 맞는 할머니에게 우산", "이유 모를 전술 손전등").
-참고: ${tone || '(정보 없음)'}
-[출력] JSON 하나만, 코드펜스 없이: { "items": [ { "name": "오늘 산 것", "reason": "한 줄 이유" } ] }`;
-    try { return await llmJSON(prompt, 800); }
+    const persona = charState(name).data?.persona || '';
+    const card = base ? gatherCard(base).slice(0, 1200) : '';
+    const voice = recentLinesOf(name, 6);
+    const prompt = `캐릭터 "${name}"가 오늘 산 것 3~7개를 적는다.
+다양하게 섞는다: 생필품(휴지·두유)부터 사치품, 주식·코인·부동산 같은 큰 지출, 즉흥 감정소비, 계획적인 것까지. 가끔 엉뚱하거나 감정적인 것도(예: "비 맞는 노인에게 우산").
+각 "reason"은 이 캐릭터의 말투 그대로 자연스럽고 캐주얼하게(보고서체 금지). 채팅 맥락·관계·성격을 반영. 짧고 툭 던지는 것 / 감정적인 것 / 어이없는 것을 섞어 웃기게.
+[성격] ${persona || '(없음)'}
+[설정] ${card || '(없음)'}
+[말투 예시 — 최근 대사]
+${voice || '(없음)'}
+[출력] JSON 하나만, 코드펜스 없이: { "items": [ { "name": "오늘 산 것", "reason": "이 캐릭터 말투의 한 줄 이유" } ] }`;
+    try { return await llmJSON(prompt, 1200); }
     catch (e) { dbg('소비 생성 실패:', e?.message || String(e)); toastr.error('소비 생성 실패. 로그 확인.'); return null; }
 }
 function pinToChat(name, text) {

@@ -66,15 +66,15 @@
 
 /* 명세 줄 — 이름/출처/값/노트 세로 적층 */
 .spoils-app .sp-line{display:grid; grid-template-columns:1.9em 1fr auto;
-  grid-template-areas:"i n b" "i from b" "i v b" "i note b"; column-gap:8px; align-items:start;
-  padding:9px 2px; border-bottom:1px solid var(--line);}
+  grid-template-areas:"i n b" "i from b" "i v b" "i note b"; column-gap:9px; align-items:start;
+  padding:8px 2px; border-bottom:1px solid var(--line);}
 .spoils-app .sp-line:last-child{border-bottom:0;}
-.spoils-app .sp-line .ic{grid-area:i; font-size:1.05em; padding-top:1px;}
-.spoils-app .sp-line .nm{grid-area:n; font-weight:600; word-break:break-word;}
+.spoils-app .sp-line .ic{grid-area:i; font-size:1.1em; line-height:1.5; align-self:start;}
+.spoils-app .sp-line .nm{grid-area:n; font-weight:600; line-height:1.45; word-break:break-word;}
 .spoils-app .sp-from{grid-area:from; display:inline-block; max-width:100%; margin-top:3px; padding:1px 8px; border-radius:999px;
   background:var(--rosy-fill); color:var(--rosy-deep); font-size:.66em; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.spoils-app .sp-line .vl{grid-area:v; font-family:var(--mono); color:var(--mid); font-size:.92em; margin-top:2px; overflow-wrap:anywhere;}
-.spoils-app .sp-line .nt{grid-area:note; font-size:.8em; color:var(--ink-soft); font-style:italic; margin-top:3px; line-height:1.4;}
+.spoils-app .sp-line .vl{grid-area:v; font-family:var(--mono); color:var(--mid); font-size:.9em; margin-top:1px; overflow-wrap:anywhere;}
+.spoils-app .sp-line .nt{grid-area:note; font-size:.79em; color:var(--ink-soft); font-style:italic; margin-top:3px; line-height:1.45;}
 .spoils-app .sp-line .sp-mini{grid-area:b; align-self:center;}
 .spoils-app .sp-line.zero .vl{color:var(--ink-soft);}
 .spoils-app .sp-line .vl.debt{color:#C0504A; font-weight:700;}
@@ -113,8 +113,8 @@
 .spoils-app .sp-balance .amt{font-family:var(--mono); font-size:1.9em; font-weight:800; color:var(--moss-deep); margin-top:3px;}
 
 /* 카테고리 */
-.spoils-app .sp-cat{margin-bottom:4px;}
-.spoils-app .sp-cat-hd{display:flex; justify-content:space-between; align-items:center; font-size:.74em; font-weight:700; color:var(--rosy-deep); letter-spacing:.03em; padding:9px 2px 3px; margin-top:4px; border-bottom:1px solid var(--moss-fill);}
+.spoils-app .sp-cat{margin-bottom:2px;}
+.spoils-app .sp-cat-hd{display:flex; justify-content:space-between; align-items:center; font-size:.72em; font-weight:800; color:var(--rosy-deep); letter-spacing:.06em; padding:11px 2px 4px; margin-top:6px; border-bottom:1px solid var(--moss-fill); text-transform:uppercase;}
 .spoils-app .sp-cat-sum{font-family:var(--mono); color:var(--ink-soft); font-weight:600;}
 .spoils-app .sp-tag{font-size:.66em; padding:2px 7px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:600; background:var(--rosy-fill); color:var(--rosy-deep);}
 
