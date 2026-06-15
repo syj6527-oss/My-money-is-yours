@@ -1,0 +1,78 @@
+/* 💰 전리품 — ST 테마 변수에 묻어가는 감정서 영수증 룩 */
+
+.spoils-receipt {
+    font-family: var(--mainFontFamily, monospace);
+    color: var(--SmartThemeBodyColor);
+    padding: 4px 2px;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.spoils-head {
+    text-align: center;
+    border-bottom: 1px dashed var(--SmartThemeBorderColor);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.spoils-title {
+    font-size: 1.3em;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+}
+
+.spoils-sub {
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+.spoils-worth {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 4px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.spoils-worth span { opacity: 0.7; font-size: 0.85em; }
+.spoils-worth strong { font-size: 1.15em; }
+
+.spoils-list { display: flex; flex-direction: column; }
+
+.spoils-row {
+    display: grid;
+    grid-template-columns: 1.6em minmax(0, 1fr) auto;
+    grid-template-areas:
+        "ico name val"
+        ".   note note";
+    column-gap: 8px;
+    align-items: baseline;
+    padding: 6px 2px;
+    border-bottom: 1px dotted var(--SmartThemeBorderColor);
+}
+
+.spoils-ico  { grid-area: ico; }
+.spoils-name { grid-area: name; font-weight: 600; word-break: break-word; }
+.spoils-val  { grid-area: val; text-align: right; white-space: nowrap; opacity: 0.9; }
+.spoils-note {
+    grid-area: note;
+    font-size: 0.82em;
+    opacity: 0.6;
+    font-style: italic;
+    margin-top: 2px;
+}
+
+.spoils-verdict {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--SmartThemeBorderColor);
+    text-align: center;
+    font-style: italic;
+    opacity: 0.85;
+}
+
+/* tier 악센트 — 총액 색만 살짝 */
+.tier-rich  .spoils-worth strong { color: #d4af37; }
+.tier-broke .spoils-worth strong { opacity: 0.55; text-decoration: line-through; }
