@@ -153,9 +153,19 @@
 @keyframes sp-spin{to{transform:rotate(360deg);}}
 
 /* 전체 리셋 (헤더) */
-.spoils-app .sp-reset-hd{position:absolute; left:12px; top:8px; width:30px; height:30px; border:none; cursor:pointer;
-  background:transparent; color:var(--ink-soft); border-radius:50%; font-size:1.05em; line-height:1;}
-.spoils-app .sp-reset-hd:hover{background:var(--rosy-fill); color:var(--rosy-deep);}
+.spoils-app .sp-reset-hd{position:absolute; left:11px; top:7px; width:32px; height:32px; border:none; cursor:pointer;
+  background:var(--moss-fill); color:var(--moss-deep); border-radius:50%; font-size:1.15em; line-height:1; font-weight:700;
+  display:flex; align-items:center; justify-content:center; transition:transform .15s, background .15s;}
+.spoils-app .sp-reset-hd:hover{background:var(--moss); color:#fff; transform:rotate(-90deg);}
+.spoils-app .sp-reset-hd:active{transform:rotate(-180deg);}
+
+/* 재산 비교 */
+.spoils-app .sp-rankrow{display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--line);}
+.spoils-app .sp-rankrow:last-child{border-bottom:0;}
+.spoils-app .sp-rankrow .rk{flex-shrink:0; width:2.1em; text-align:center; font-size:1.05em; font-weight:800; color:var(--rosy-deep);}
+.spoils-app .sp-rankrow .rn{flex:1; min-width:0; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.spoils-app .sp-rankrow .rv{flex-shrink:0; font-family:var(--mono); color:var(--mid); font-size:.88em;}
+.spoils-app .sp-quip{margin-top:11px; padding:11px 13px; background:var(--moss-fill); border-radius:12px; font-style:italic; color:var(--moss-deep); text-align:center; line-height:1.55;}
 
 /* 자산 등급 배지 */
 .spoils-app .sp-tier{display:inline-block; margin-left:8px; padding:2px 10px; border-radius:999px; font-size:.66em; font-weight:700; vertical-align:middle; background:linear-gradient(135deg,var(--moss-fill),var(--rosy-fill)); color:var(--rosy-deep);}

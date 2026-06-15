@@ -278,7 +278,7 @@ async function genReview(cs, entry) {
 ${voice || '(없음)'}
 [출력] JSON 하나만, 코드펜스 없이:
 { "stars": 1~5 사이 정수(별점, 이 캐릭터 기준), "log": "무슨 일을 했는지 1~2문장 (사실 위주, 건조)", "review": "그 알바에 대한 캐릭터 말투 그대로의 1인칭 후기 한두 문장" }`;
-    try { return await llmJSON(prompt, 1024); }
+    try { return await llmJSON(prompt, 4096); }
     catch (e) { dbg('후기 생성 실패:', e?.message || String(e)); toastr.error('후기 생성 실패. 로그 확인.'); return null; }
 }
 async function genSpending(name) {
@@ -294,7 +294,7 @@ async function genSpending(name) {
 [말투 예시 — 최근 대사]
 ${voice || '(없음)'}
 [출력] JSON 하나만, 코드펜스 없이: { "items": [ { "name": "오늘 산 것", "reason": "이 캐릭터 말투의 한 줄 이유" } ] }`;
-    try { return await llmJSON(prompt, 1200); }
+    try { return await llmJSON(prompt, 4096); }
     catch (e) { dbg('소비 생성 실패:', e?.message || String(e)); toastr.error('소비 생성 실패. 로그 확인.'); return null; }
 }
 function pinToChat(name, text) {
@@ -308,7 +308,7 @@ function pinToChat(name, text) {
 }
 
 // ── 렌더 ──
-const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null };
+const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null, compareBusy: false };
 
 function assetLine(it, opts = {}) {
     const btn = opts.trash ? `<button class="sp-mini trash" data-act="trash" data-idx="${it._i}">🗑️ 버리기</button>`
@@ -353,6 +353,31 @@ function selectableNames() {
 function charPicker() { return `<select class="sp-select" data-act="pickchar">${selectableNames().map(n => `<option value="${esc(n)}" ${n === ui.sel ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`; }
 function charLabel() { return selectableNames().length > 1 ? charPicker() : `<span class="sp-charname">${esc(ui.sel)}</span>`; }
 
+function appraisedList() {
+    const st = getState(); if (!st) return [];
+    return selectableNames().map(n => {
+        const c = st.chars?.[n];
+        if (!c?.appraised || !c.data) return null;
+        const v = parseWon(c.data.worth) || sumAll(c.data.items);
+        return { name: n, worth: c.data.worth || fmtWon(sumAll(c.data.items)), v };
+    }).filter(Boolean).sort((a, b) => b.v - a.v);
+}
+function renderCompare() {
+    const st = getState(); if (!st) return '';
+    const list = appraisedList();
+    if (list.length < 2) return '';
+    const medals = ['🥇', '🥈', '🥉'];
+    const rows = list.map((e, i) => `<div class="sp-rankrow"><span class="rk">${medals[i] || (i + 1) + '위'}</span><span class="rn">${esc(e.name)}</span><span class="rv">${esc(e.worth)}</span></div>`).join('');
+    const body = ui.compareBusy
+        ? '<div class="sp-loading"><span class="sp-spin"></span> 둘을 저울질하는 중…</div>'
+        : (st.compareQuip ? `<div class="sp-quip">“${esc(st.compareQuip)}”</div>` : '');
+    return `<div class="sp-card">
+      <div class="sp-cardhead"><span class="sp-ttl">📊 재산 비교</span><button class="sp-btn ghost sm" data-act="comparequip">${st.compareQuip ? '다시 비교평' : '비교평'}</button></div>
+      <div class="sp-rank">${rows}</div>
+      ${body}
+    </div>`;
+}
+
 function renderAppraise(cs) {
     const multi = selectableNames().length > 1;
     const isExtra = !ui.chars.find(x => x.name === ui.sel);
@@ -393,7 +418,7 @@ function renderAppraise(cs) {
             ${d.reaction ? `<div class="sp-reaction">“${esc(d.reaction)}”</div>` : ''}
           </div></div>`;
     }
-    return top + assets + spendCard + slip;
+    return top + assets + spendCard + renderCompare() + slip;
 }
 
 function renderVault(st) {
@@ -526,6 +551,23 @@ async function onAction(e) {
         if (a.resetAt && Date.now() < a.resetAt) return;
         if (a.rolls >= a.budget) { a.resetAt = Date.now() + COOLDOWN_MS; toastr.info(SNARK[Math.floor(Math.random() * SNARK.length)], '알바지옥'); saveState(); render(); return; }
         a.rolls += 1; a.jobs = rollPage(); saveState(); render();
+    }
+    else if (act === 'comparequip') {
+        const list = appraisedList(); if (list.length < 2) return;
+        ui.compareBusy = true; render();
+        const topC = list[0], botC = list[list.length - 1];
+        const tp = charState(topC.name).data?.persona || '';
+        const bp = charState(botC.name).data?.persona || '';
+        const prompt = `두 인물의 재산을 데드팬으로 비교하는 한두 줄을 쓴다. 위트있게, 각자 처지가 확 드러나게. 보고서체 금지, 캐주얼하게.
+- 부자: "${topC.name}" (${topC.worth}), 성격: ${tp || '(없음)'}
+- 빈자: "${botC.name}" (${botC.worth}), 성격: ${bp || '(없음)'}
+느낌 예: "한 명은 가문 후계자. 한 명은 자전거 체인 빠지면 집에 못 감."
+[출력] JSON 하나만, 코드펜스 없이: { "quip": "한두 줄 비교평" }`;
+        let d = null;
+        try { d = await llmJSON(prompt, 4096); } catch (e) { dbg('비교평 실패:', e?.message || String(e)); toastr.error('비교평 실패. 로그 확인.'); }
+        ui.compareBusy = false;
+        if (d?.quip) { st.compareQuip = d.quip; saveState(); }
+        render();
     }
     else if (act === 'spend') {
         ui.spendBusy = ui.sel; render();
