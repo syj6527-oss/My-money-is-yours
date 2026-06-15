@@ -149,9 +149,10 @@ function renderReceipt(data, name) {
 async function onLootClick() {
     const ctx = SillyTavern.getContext();
 
-    const profileId = ctx.extensionSettings?.connectionManager?.selectedProfile;
+    const profileId = ctx.extensionSettings?.spoils?.profileId
+        || ctx.extensionSettings?.connectionManager?.selectedProfile;
     if (!profileId) {
-        toastr.warning('연결 프로필을 먼저 선택해줘 (Connection Profile)');
+        toastr.warning('설정창(Extensions → 💰 전리품)에서 연결 프로필을 골라줘');
         return;
     }
 
@@ -192,6 +193,49 @@ async function onLootClick() {
 }
 
 // ──────────────────────────────────────────────
+// 설정 드로어 (Extensions 패널 → 연결 프로필)
+// ──────────────────────────────────────────────
+function refreshProfiles(ctx) {
+    const profiles = ctx.extensionSettings?.connectionManager?.profiles ?? [];
+    const cur = ctx.extensionSettings?.spoils?.profileId ?? '';
+    const opts = ['<option value="">— ST 전역 선택 프로필 사용 —</option>']
+        .concat(profiles.map(p => `<option value="${p.id}">${$('<i>').text(p.name || p.id).html()}</option>`));
+    $('#spoils_profile').html(opts.join('')).val(cur);
+}
+
+function initSettings(ctx) {
+    if (document.getElementById('spoils_settings')) return;
+    ctx.extensionSettings.spoils = ctx.extensionSettings.spoils || { profileId: '' };
+
+    const html = `
+    <div id="spoils_settings" class="spoils-settings">
+      <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+          <b>💰 전리품</b>
+          <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+          <label for="spoils_profile">연결 프로필</label>
+          <select id="spoils_profile" class="text_pole"></select>
+          <small class="opacity50p">감정에 쓸 API. 비워두면 ST 전역 선택 프로필을 따라감.</small>
+        </div>
+      </div>
+    </div>`;
+
+    $('#extensions_settings').append(html);
+    refreshProfiles(ctx);
+
+    $('#spoils_profile').on('change', function () {
+        ctx.extensionSettings.spoils.profileId = $(this).val();
+        ctx.saveSettingsDebounced();
+        console.log(LOG, '프로필 설정:', $(this).val() || '(전역)');
+    });
+    // 드로어 열 때마다 프로필 목록 최신화 (나중에 추가된 프로필 반영)
+    $('#spoils_settings .inline-drawer-toggle').on('click', () => refreshProfiles(ctx));
+    console.log(LOG, '설정 드로어 주입 완료');
+}
+
+// ──────────────────────────────────────────────
 // 버튼 주입
 // ──────────────────────────────────────────────
 function injectButton() {
@@ -213,4 +257,11 @@ jQuery(() => {
         else setTimeout(tryInject, 500);
     };
     tryInject();
+
+    const ctx = SillyTavern.getContext();
+    const trySettings = () => {
+        if ($('#extensions_settings').length) initSettings(ctx);
+        else setTimeout(trySettings, 500);
+    };
+    trySettings();
 });
