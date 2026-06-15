@@ -11,8 +11,8 @@ function dbg(...args) {
     if (logBuf.length > 120) logBuf.shift();
     console.log(LOG, ...args);
 }
-const CATS = ['현금', '예적금', '주식·투자', '부동산', '차량', '귀중품', '물건'];
-const CAT_ICON = { '현금': '💵', '예적금': '🏦', '주식·투자': '📈', '부동산': '🏠', '차량': '🚗', '귀중품': '💎', '물건': '📦' };
+const CATS = ['현금', '예적금', '주식·투자', '부동산', '차량', '귀중품', '물건', '빚'];
+const CAT_ICON = { '현금': '💵', '예적금': '🏦', '주식·투자': '📈', '부동산': '🏠', '차량': '🚗', '귀중품': '💎', '물건': '📦', '빚': '💸' };
 
 // ── 금액 ──
 function parseWon(s) {
@@ -34,8 +34,9 @@ function fmtWon(v) {
 }
 function esc(s) { return $('<i>').text(String(s ?? '')).html(); }
 function ctx() { return SillyTavern.getContext(); }
+function itemVal(it) { return (it.debt ? -1 : 1) * parseWon(it.value); }
 function sumCat(items, cat) { return (items || []).filter(it => it.category === cat).reduce((s, it) => s + parseWon(it.value), 0); }
-function sumAll(items) { return (items || []).reduce((s, it) => s + parseWon(it.value), 0); }
+function sumAll(items) { return (items || []).reduce((s, it) => s + itemVal(it), 0); }
 
 // ── 상태 ──
 function getState() {
@@ -100,7 +101,8 @@ function buildPrompt(name, card, chat, lore) {
 [원칙]
 - 채팅·로어북·카드에 실제로 등장한 소지품과 재산은 그대로 반영한다.
 - 비어있는 부분은 대상의 처지·성격·세계관에 어울리게 그럴듯하게 채워 지어낸다.
-- 유저가 손에 쥘 수 있는 "자산"만 다룬다. (빚·부채는 이 목록의 관심사가 아니다.)
+- items에는 유저가 손에 쥘 수 있는 "자산"만 넣는다. 빚·부채는 items에 절대 넣지 않는다.
+- hidden_debt: 캐릭터의 성격·처지상 빚이 있을 법하면 채운다 (도박빚 / 카드론 / 사채 / 빌리고 안 갚은 돈 등). 아니면 null. 이건 유저에게 보이지 않는 숨은 항목이다.
 - 모든 자산은 items에 넣고 category로 분류한다: 현금 / 예적금 / 주식·투자 / 부동산 / 차량 / 귀중품 / 물건.
   현금·통장 잔액·주식도 각 category로. 소소한 소지품·잡동사니는 "물건"으로.
 - 부유하면 값나가는 것을, "찐거지"라면 "물건" category에 거의 무가치한 잡동사니(0원)를 진지한 척 기재한다.
@@ -123,7 +125,8 @@ function buildPrompt(name, card, chat, lore) {
   "items": [ { "category": "현금|예적금|주식·투자|부동산|차량|귀중품|물건", "icon": "이모지", "name": "품목", "value": "가치", "note": "건조한 한 줄" } ],
   "worth": "추정 총액",
   "verdict": "감정사의 독설 한 줄",
-  "persona": "성격 + 말투 한 줄 데드팬"
+  "persona": "성격 + 말투 한 줄 데드팬",
+  "hidden_debt": null 또는 { "icon": "💸", "name": "빚 이름", "value": "금액", "note": "건조한 한 줄" }
 }
 
 [대상: ${name}]
@@ -169,7 +172,7 @@ async function appraiseByName(name) {
     const lore = base ? await gatherLore(base) : '';
     return runAppraisal(name, card, lore);
 }
-function normItems(d) { return (d.items || []).map(it => ({ category: CATS.includes(it.category) ? it.category : '물건', icon: it.icon, name: it.name, value: it.value, note: it.note })); }
+function normItems(d) { return (d.items || []).filter(it => it.category !== '빚').map(it => ({ category: CATS.includes(it.category) ? it.category : '물건', icon: it.icon, name: it.name, value: it.value, note: it.note })); }
 
 // ── 알바지옥 ──
 const JOB_POOL = [
@@ -233,18 +236,25 @@ function ensureAlba(cs) {
 let logSeq = 0;
 function newWorkId() { return 'w' + Date.now().toString(36) + '-' + (logSeq++).toString(36); }
 function migrateLog(cs) { (cs.workLog || []).forEach(r => { if (!r.id) r.id = newWorkId(); }); }
+function recentLinesOf(name, n) {
+    try { return (ctx().chat || []).filter(m => !m.is_user && m.name === name).slice(-n).map(m => `- ${String(m.mes).replace(/\s+/g, ' ').slice(0, 120)}`).join('\n'); }
+    catch (e) { return ''; }
+}
 async function genReview(cs, entry) {
     const char = ui.chars.find(x => x.name === ui.sel);
-    const tone = cs.data?.persona || (char ? gatherCard(char).slice(0, 1500) : '');
-    const prompt = `캐릭터 "${ui.sel}"가 방금 '${entry.n}' 알바를 하고 왔다 (특이사항: ${entry.note}).
-이 캐릭터의 성격·말투 참고:
-${tone || '(정보 없음)'}
-
-그 알바 경험에 대한 후기를, 캐릭터의 성격과 말투 그대로 작성한다. 데드팬 유지, 과장 금지.
+    const persona = cs.data?.persona || '';
+    const card = char ? gatherCard(char) : '';
+    const voice = recentLinesOf(ui.sel, 6);
+    const prompt = `너는 캐릭터 "${ui.sel}" 본인이다. 방금 '${entry.n}' 알바를 하고 왔다 (특이사항: ${entry.note}${entry.incident ? ', ' + entry.incident : ''}).
+아래 정보로 이 캐릭터의 성격과 말투를 정확히 흉내 내서 1인칭으로 후기를 쓴다. 어휘·말버릇·문장 길이·존댓말/반말까지 캐릭터답게. 데드팬 유지, 과장 금지.
+[성격 요약] ${persona || '(없음)'}
+[캐릭터 설정] ${card.slice(0, 1500) || '(없음)'}
+[말투 예시 — 이 캐릭터의 최근 대사]
+${voice || '(없음)'}
 [출력] JSON 하나만, 코드펜스 없이:
-{ "stars": 1~5 사이 정수(별점), "log": "무슨 일을 했는지 1~2문장 일기체 (사실 위주, 건조)", "review": "그 알바에 대한 캐릭터 말투의 후기 한두 문장" }`;
+{ "stars": 1~5 사이 정수(별점, 이 캐릭터 기준), "log": "무슨 일을 했는지 1~2문장 (사실 위주, 건조)", "review": "그 알바에 대한 캐릭터 말투 그대로의 1인칭 후기 한두 문장" }`;
     try { return await llmJSON(prompt, 1024); }
-    catch (e) { console.error(LOG, '후기 생성 실패', e); toastr.error('후기 생성 실패. 콘솔 확인.'); return null; }
+    catch (e) { dbg('후기 생성 실패:', e?.message || String(e)); toastr.error('후기 생성 실패. 로그 확인.'); return null; }
 }
 async function genSpending(name) {
     const base = ui.chars.find(x => x.name === name);
@@ -275,7 +285,7 @@ function assetLine(it, opts = {}) {
       <span class="ic">${esc(it.icon || CAT_ICON[it.category] || '📦')}</span>
       <span class="nm">${esc(it.name)}</span>
       ${opts.from ? `<span class="sp-from">${esc(opts.from)}</span>` : ''}
-      <span class="vl">${esc(it.value)}</span>
+      <span class="vl ${it.debt ? 'debt' : ''}">${it.debt ? '-' : ''}${esc(it.value)}</span>
       ${it.note ? `<span class="nt">${esc(it.note)}</span>` : ''}${btn}</div>`;
 }
 function renderSections(items, mode) {
@@ -285,7 +295,7 @@ function renderSections(items, mode) {
     CATS.forEach(cat => {
         const arr = g[cat]; if (!arr || !arr.length) return;
         const rows = arr.map(it => assetLine(it, { trash: mode === 'appraise' && cat === '물건', ret: mode === 'vault', from: mode === 'vault' ? it.from : null })).join('');
-        html += `<div class="sp-cat"><div class="sp-cat-hd"><span>${CAT_ICON[cat]} ${cat}</span><span class="sp-cat-sum">${fmtWon(arr.reduce((s, it) => s + parseWon(it.value), 0))}</span></div>${rows}</div>`;
+        html += `<div class="sp-cat"><div class="sp-cat-hd"><span>${CAT_ICON[cat]} ${cat}</span><span class="sp-cat-sum">${fmtWon(arr.reduce((s, it) => s + itemVal(it), 0))}</span></div>${rows}</div>`;
     });
     return html || '<div class="sp-empty">항목이 없습니다.</div>';
 }
@@ -339,10 +349,11 @@ function renderAppraise(cs) {
     if (cs.handedOver && cs.data) {
         const d = cs.data;
         const lines = (d.items || []).map(it => `<div class="sp-line"><span class="ic">${esc(it.icon || CAT_ICON[it.category] || '•')}</span><span class="nm">${esc(it.name)}</span><span class="vl">${esc(it.value)}</span></div>`).join('');
+        const debtLine = cs.handedDebt ? `<div class="sp-line debtline"><span class="ic">${esc(cs.handedDebt.icon || '💸')}</span><span class="nm">⚠ ${esc(cs.handedDebt.name)} <span class="sp-tag from">딸려옴</span></span><span class="vl debt">-${esc(cs.handedDebt.value)}</span></div>` : '';
         slip = `<div class="sp-card"><div class="sp-ttl">인수증</div>
           <div class="sp-slip"><div class="sp-stamp">인 수 완 료</div>
             <div class="sp-sh"><div class="t">인수 명세서</div><div class="s">${esc(ui.sel)} → 귀하</div></div>
-            ${lines}
+            ${lines}${debtLine}
             <div class="sp-total"><span class="lbl">인수 총액</span><span class="amt">${esc(d.worth || '?')}</span></div>
             <div class="sp-verdict">${esc(d.verdict || '')}</div>
             ${d.persona ? `<div class="sp-memo"><span class="memo-lbl">감정사 메모</span> ${esc(d.persona)}</div>` : ''}
@@ -361,7 +372,7 @@ function renderVault(st) {
         ${mine.length ? renderSections(mine, 'display') : '<div class="sp-empty">아직 내 재산을 감정하지 않았습니다.</div>'}
       </div>
       <div class="sp-card">
-        <div class="sp-ttl">인수한 재산 <span class="sp-sub">${fmtWon(sumAll(trans))}</span></div>
+        <div class="sp-cardhead"><span class="sp-ttl">인수한 재산 <span class="sp-sub">${fmtWon(sumAll(trans))}</span></span>${trans.length ? '<button class="sp-btn ghost sm" data-act="returnall">전체 되돌려주기</button>' : ''}</div>
         ${trans.length ? renderSections(trans, 'vault') : '<div class="sp-empty">인수한 재산이 없습니다.</div>'}
       </div>`;
 }
@@ -450,8 +461,20 @@ async function onAction(e) {
     else if (act === 'handover') {
         if (!cs.data) return;
         cs.data.items.forEach(m => st.vault.push({ ...m, from: ui.sel }));
+        cs.handedDebt = null;
+        const hd = cs.data.hidden_debt;
+        if (hd && hd.value && Math.random() < 0.55) {
+            const debt = { category: '빚', icon: hd.icon || '💸', name: hd.name || '딸려온 빚', value: hd.value, note: hd.note || '', debt: true };
+            st.vault.push({ ...debt, from: ui.sel });
+            cs.handedDebt = debt;
+        }
         cs.handedOver = true; cs.balance = 0; cs.alba = null; saveState(); ui.tab = 'vault'; render();
-        toastr.success(`${ui.sel}의 재산을 인수했습니다.`);
+        if (cs.handedDebt) toastr.warning(`어... ${ui.sel}의 빚도 딸려왔습니다.`, '💸', { timeOut: 6000 });
+        else toastr.success(`${ui.sel}의 재산을 인수했습니다.`);
+    }
+    else if (act === 'returnall') {
+        (st.vault || []).forEach(item => { if (item.from && item.from !== '내 것' && !item.debt) charState(item.from).balance += parseWon(item.value); });
+        st.vault = []; saveState(); render();
     }
     else if (act === 'return') {
         const i = +el.dataset.idx, item = st.vault[i]; st.vault.splice(i, 1);
@@ -537,7 +560,7 @@ function initSettings(c) {
           <div id="spoils_logwrap" style="display:none; margin-top:10px;">
             <label>로그</label>
             <textarea id="spoils_log" class="text_pole" rows="8" readonly style="font-family:monospace; font-size:.8em;"></textarea>
-            <div style="margin-top:6px;"><input id="spoils_log_clear" type="button" class="menu_button" value="로그 비우기"></div>
+            <div style="margin-top:6px;"><input id="spoils_log_copy" type="button" class="menu_button" value="복사"> <input id="spoils_log_clear" type="button" class="menu_button" value="로그 비우기"></div>
           </div>
         </div></div></div>`);
     refreshProfiles(c);
@@ -555,6 +578,11 @@ function initSettings(c) {
         }
     });
     $('#spoils_log_clear').on('click', () => { logBuf.length = 0; $('#spoils_log').val(''); });
+    $('#spoils_log_copy').on('click', async () => {
+        const txt = logBuf.join('\n');
+        try { await navigator.clipboard.writeText(txt); toastr.success('로그 복사됨'); }
+        catch (e) { const ta = document.getElementById('spoils_log'); ta.removeAttribute('readonly'); ta.select(); try { document.execCommand('copy'); } catch (e2) { } ta.setAttribute('readonly', 'readonly'); toastr.success('로그 복사됨'); }
+    });
     console.log(LOG, '설정 드로어 주입 완료');
 }
 function injectButton() {

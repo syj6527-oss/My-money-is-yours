@@ -77,6 +77,8 @@
 .spoils-app .sp-line .nt{grid-area:note; font-size:.8em; color:var(--ink-soft); font-style:italic; margin-top:3px; line-height:1.4;}
 .spoils-app .sp-line .sp-mini{grid-area:b; align-self:center;}
 .spoils-app .sp-line.zero .vl{color:var(--ink-soft);}
+.spoils-app .sp-line .vl.debt{color:#C0504A; font-weight:700;}
+.spoils-app .sp-line.debtline .nm{color:#C0504A;}
 
 .spoils-app .sp-income{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:2px 2px 11px; margin-bottom:5px; border-bottom:1px solid var(--line);}
 .spoils-app .sp-income .lbl{flex-shrink:0; white-space:nowrap; font-size:.85em; color:var(--ink-soft); padding-top:2px;}
