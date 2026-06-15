@@ -336,7 +336,7 @@ function render() {
     const st = getState(); if (!st || !ui.$box) return;
     const cs = charState(ui.sel);
     const top = `<div class="sp-top">
-      <div class="sp-hd"><span class="sp-logo">💰 전리품</span><button class="sp-close" data-act="close" title="닫기">✕</button></div>
+      <div class="sp-hd"><button class="sp-reset-hd" data-act="resetall" title="전체 리셋">⟳</button><span class="sp-logo">💰 전리품</span><button class="sp-close" data-act="close" title="닫기">✕</button></div>
       <div class="sp-tabs">
         <div class="sp-tab ${ui.tab === 'appraise' ? 'on' : ''}" data-tab="appraise">감정</div>
         <div class="sp-tab ${ui.tab === 'vault' ? 'on' : ''}" data-tab="vault">금고</div>
@@ -408,8 +408,7 @@ function renderVault(st) {
       <div class="sp-card">
         <div class="sp-cardhead"><span class="sp-ttl">인수한 재산 <span class="sp-sub">${fmtWon(sumAll(trans))}</span></span>${trans.length ? '<button class="sp-btn ghost sm" data-act="returnall">전체 되돌려주기</button>' : ''}</div>
         ${trans.length ? renderSections(trans, 'vault') : '<div class="sp-empty">인수한 재산이 없습니다.</div>'}
-      </div>
-      <div class="sp-reset"><button class="sp-btn ghost sm" data-act="resetall">⟳ 전체 리셋</button></div>`;
+      </div>`;
 }
 
 function renderLogRow(r) {
