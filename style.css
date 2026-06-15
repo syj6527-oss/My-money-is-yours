@@ -102,6 +102,7 @@
 .spoils-app .sp-sh .s{font-size:.78em; color:var(--ink-soft); margin-top:3px;}
 .spoils-app .sp-slip .sp-total{border-top-color:rgba(216,154,142,.45);}
 .spoils-app .sp-verdict{margin-top:12px; padding-top:9px; border-top:1px dashed rgba(216,154,142,.5); text-align:center; font-style:italic; color:var(--ink-soft); font-family:inherit; font-size:.88em;}
+.spoils-app .sp-reaction{margin-top:12px; padding:12px 14px 4px; border-top:1px dashed rgba(216,154,142,.5); text-align:center; font-style:italic; font-size:1.02em; color:var(--moss-deep); font-family:inherit; line-height:1.55;}
 .spoils-app .sp-memo{margin-top:9px; padding-top:8px; border-top:1px dotted rgba(216,154,142,.4); font-family:inherit; font-size:.8em; color:var(--ink-soft); line-height:1.5;}
 .spoils-app .sp-memo .memo-lbl{color:var(--rosy-deep); font-weight:700; margin-right:5px;}
 .spoils-app .sp-stamp{position:absolute; top:14px; right:10px; border:2.5px solid var(--rosy); color:var(--rosy-deep); font-family:inherit; font-weight:800; font-size:.68em; letter-spacing:.2em; padding:5px 9px; border-radius:6px; transform:rotate(-11deg); opacity:.9; pointer-events:none; background:rgba(255,255,255,.4);}

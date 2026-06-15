@@ -116,6 +116,8 @@ function buildPrompt(name, card, chat, lore) {
 - tier는 자산 등급을 위트있는 짧은 라벨로 자유롭게 짓는다 (거지 / 생계형 인간 / 평범한 시민 / 부자 / 상속세의 화신 등, 캐릭터 맞춤).
 - verdict는 자산 구성을 꿰뚫는 감정사의 독설 한 줄. 위트있되 인신공격 직전에서 멈춘다.
   (예: "돈은 많지만 내일 아침 커피 살 현금은 없음", "자산보다 자신감이 더 많은 사람", "세무서가 좋아할 구성")
+- reaction은 유저가 이 인물의 재산을 전부 가져갈 때 인물이 보일 반응을, 그 인물의 말투 그대로 한두 마디 + 상황에 맞는 이모지 1개.
+  처지에 맞게: 빈털터리는 절망·매달림("자기야… 나 어떻게 살아 😭"), 부자는 코웃음·무관심, 자존심 강하면 허세 등. 감정적이든 시니컬하든 캐릭터답게.
 - 세계관에 맞는 통화·단위. 대상/채팅과 같은 언어로. 불명확하면 한국어.
 
 [출력] 아래 JSON 객체 하나만. 코드펜스·설명 없이.
@@ -126,6 +128,7 @@ function buildPrompt(name, card, chat, lore) {
   "worth": "추정 총액",
   "verdict": "감정사의 독설 한 줄",
   "persona": "성격 + 말투 한 줄 데드팬",
+  "reaction": "전 재산을 빼앗길 때 이 인물이 내뱉는 한두 마디 (인물 말투 + 이모지 1개)",
   "hidden_debt": null 또는 { "icon": "💸", "name": "빚 이름", "value": "금액", "note": "건조한 한 줄" }
 }
 
@@ -259,7 +262,9 @@ ${voice || '(없음)'}
 async function genSpending(name) {
     const base = ui.chars.find(x => x.name === name);
     const tone = charState(name).data?.persona || (base ? gatherCard(base).slice(0, 800) : '');
-    const prompt = `캐릭터 "${name}"가 오늘 충동적으로 산 것 1~3개를 적는다. 각 품목 + 왜 샀는지 한 줄(데드팬, "이유 모름" 같은 것도 OK). 캐릭터 성향과 처지를 반영.
+    const prompt = `캐릭터 "${name}"가 오늘 산 것 3~7개를 적는다. 각 품목 + 왜 샀는지 한 줄(데드팬, "이유 모름" 같은 것도 OK).
+다양하게 섞는다: 소소한 생필품(휴지·우유)부터 사치품, 주식·코인·부동산 같은 큰 지출, 즉흥 감정 소비, 계획적인 것까지.
+캐릭터의 성향·처지·기분을 반영. 가끔은 엉뚱하거나 감정적인 것도 (예: "비 맞는 할머니에게 우산", "이유 모를 전술 손전등").
 참고: ${tone || '(정보 없음)'}
 [출력] JSON 하나만, 코드펜스 없이: { "items": [ { "name": "오늘 산 것", "reason": "한 줄 이유" } ] }`;
     try { return await llmJSON(prompt, 800); }
@@ -355,8 +360,7 @@ function renderAppraise(cs) {
             <div class="sp-sh"><div class="t">인수 명세서</div><div class="s">${esc(ui.sel)} → 귀하</div></div>
             ${lines}${debtLine}
             <div class="sp-total"><span class="lbl">인수 총액</span><span class="amt">${esc(d.worth || '?')}</span></div>
-            <div class="sp-verdict">${esc(d.verdict || '')}</div>
-            ${d.persona ? `<div class="sp-memo"><span class="memo-lbl">감정사 메모</span> ${esc(d.persona)}</div>` : ''}
+            ${d.reaction ? `<div class="sp-reaction">“${esc(d.reaction)}”</div>` : ''}
           </div></div>`;
     }
     return top + assets + spendCard + slip;
@@ -495,7 +499,7 @@ async function onAction(e) {
     }
     else if (act === 'spend') {
         const d = await genSpending(ui.sel);
-        if (d?.items) { cs.todaySpend = d.items.slice(0, 3); saveState(); render(); }
+        if (d?.items) { cs.todaySpend = d.items.slice(0, 7); saveState(); render(); }
     }
     else if (act === 'clearlog') { cs.workLog = []; ui.openLog = null; saveState(); render(); }
     else if (act === 'logopen') {
