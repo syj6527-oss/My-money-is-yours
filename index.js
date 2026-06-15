@@ -111,15 +111,18 @@ function buildPrompt(name, card, chat, lore) {
   (부동산=구체 매물·지역, 주식·투자=종목/코인명, 차량=구체 모델, 귀중품=구체 명품/보석/시계, 예적금=상품명·통화)
 - 금액(value/worth)은 숫자+통화 위주로. 비꼬는 부연은 note에, 금액 옆 괄호는 한두 단어로 짧게.
 - note는 짧고 건조하게. persona는 성격+말투 한 줄 요약, 역시 건조하게.
+- tier는 자산 등급을 위트있는 짧은 라벨로 자유롭게 짓는다 (거지 / 생계형 인간 / 평범한 시민 / 부자 / 상속세의 화신 등, 캐릭터 맞춤).
+- verdict는 자산 구성을 꿰뚫는 감정사의 독설 한 줄. 위트있되 인신공격 직전에서 멈춘다.
+  (예: "돈은 많지만 내일 아침 커피 살 현금은 없음", "자산보다 자신감이 더 많은 사람", "세무서가 좋아할 구성")
 - 세계관에 맞는 통화·단위. 대상/채팅과 같은 언어로. 불명확하면 한국어.
 
 [출력] 아래 JSON 객체 하나만. 코드펜스·설명 없이.
 {
-  "tier": "부유" | "평범" | "빈털터리" | "찐거지",
+  "tier": "자산 등급 (위트있는 짧은 라벨)",
   "income": { "monthly": "월수입", "source": "수입원" },
   "items": [ { "category": "현금|예적금|주식·투자|부동산|차량|귀중품|물건", "icon": "이모지", "name": "품목", "value": "가치", "note": "건조한 한 줄" } ],
   "worth": "추정 총액",
-  "verdict": "한 줄 데드팬 총평",
+  "verdict": "감정사의 독설 한 줄",
   "persona": "성격 + 말투 한 줄 데드팬"
 }
 
@@ -204,6 +207,23 @@ const JOB_POOL = [
     { ic: '🍎', n: '과수원 농활', pay: 6, note: '사과 1톤, 멀쩡한 허리 0개' },
 ];
 const SNARK = ['일이 그렇게 안 급한가 봐?', '골라잡을 처지는 아닐 텐데.', '오늘 치 일감은 동났어. 내일 다시 오든가.'];
+const INCIDENTS = [
+    '술 취한 손님과 철학 토론 발생',
+    '사장이 자긴 좋은 사람이라고 세 번 강조함',
+    '옆 알바생이 갑자기 인생 상담을 시작함',
+    '최저시급이 맞는지 끝까지 의심됨',
+    '퇴근 직전 추가 업무가 투척됨',
+    '사장 아들이 와서 훈수를 둠',
+    '손님이 반말로 컴플레인 후 어색하게 사과함',
+    '화장실 청소가 슬며시 업무에 포함됨',
+    '4대보험 얘기를 꺼내자 분위기 싸해짐',
+    'CCTV가 유난히 많았음',
+    '쉬는 시간은 전설 속 이야기였음',
+    '손님이 번호를 물어봄 (정중히 거절)',
+    '"오늘만 좀 일찍" 이 세 번째였음',
+    '경력에 한 줄도 못 쓸 일이었음',
+];
+function pickIncident() { return Math.random() < 0.5 ? INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)] : null; }
 function rollPage() { return [...JOB_POOL].sort(() => Math.random() - 0.5).slice(0, 3 + Math.floor(Math.random() * 3)); }
 function ensureAlba(cs) {
     if (!cs.alba || (cs.alba.resetAt && Date.now() >= cs.alba.resetAt))
@@ -225,6 +245,15 @@ ${tone || '(정보 없음)'}
 { "stars": 1~5 사이 정수(별점), "log": "무슨 일을 했는지 1~2문장 일기체 (사실 위주, 건조)", "review": "그 알바에 대한 캐릭터 말투의 후기 한두 문장" }`;
     try { return await llmJSON(prompt, 1024); }
     catch (e) { console.error(LOG, '후기 생성 실패', e); toastr.error('후기 생성 실패. 콘솔 확인.'); return null; }
+}
+async function genSpending(name) {
+    const base = ui.chars.find(x => x.name === name);
+    const tone = charState(name).data?.persona || (base ? gatherCard(base).slice(0, 800) : '');
+    const prompt = `캐릭터 "${name}"가 오늘 충동적으로 산 것 1~3개를 적는다. 각 품목 + 왜 샀는지 한 줄(데드팬, "이유 모름" 같은 것도 OK). 캐릭터 성향과 처지를 반영.
+참고: ${tone || '(정보 없음)'}
+[출력] JSON 하나만, 코드펜스 없이: { "items": [ { "name": "오늘 산 것", "reason": "한 줄 이유" } ] }`;
+    try { return await llmJSON(prompt, 800); }
+    catch (e) { dbg('소비 생성 실패:', e?.message || String(e)); toastr.error('소비 생성 실패. 로그 확인.'); return null; }
 }
 function pinToChat(name, text) {
     const c = ctx();
@@ -291,13 +320,20 @@ function renderAppraise(cs) {
     if (cs.appraised && cs.data) {
         const d = cs.data;
         assets = `<div class="sp-card">
-          <div class="sp-ttl">${esc(ui.sel)} 재산</div>
+          <div class="sp-ttl">${esc(ui.sel)} 재산${d.tier ? `<span class="sp-tier">${esc(d.tier)}</span>` : ''}</div>
           <div class="sp-income"><span class="lbl">월수입</span><span class="r"><span class="amt">${esc(d.income?.monthly || '?')}</span><span class="src">${esc(d.income?.source || '')}</span></span></div>
           ${renderSections(d.items, 'appraise')}
           <div class="sp-total"><span class="lbl">추정 총액</span><span class="amt">${esc(d.worth || '?')}</span></div>
+          ${d.verdict ? `<div class="sp-judge"><span class="jl">감정사 평가</span>“${esc(d.verdict)}”</div>` : ''}
           ${cs.handedOver ? '<div class="sp-done">이미 인수 완료</div>' : '<div class="sp-handover"><button class="sp-btn" data-act="handover">재산 넘기기 ▾</button></div>'}
         </div>`;
     } else assets = `<div class="sp-empty">감정하기를 눌러 ${esc(ui.sel)}의 재산을 감정합니다.</div>`;
+
+    const sp = cs.todaySpend;
+    const spendCard = `<div class="sp-card">
+      <div class="sp-cardhead"><span class="sp-ttl">🛒 오늘의 소비</span><button class="sp-btn ghost sm" data-act="spend">${sp && sp.length ? '다시 뽑기' : '뽑기'}</button></div>
+      ${sp && sp.length ? sp.map(s => `<div class="sp-spend"><div class="ss-n">${esc(s.name)}</div><div class="ss-r">${esc(s.reason)}</div></div>`).join('') : '<div class="sp-empty">버튼을 누르면 오늘 뭘 샀는지 나옵니다.</div>'}
+    </div>`;
 
     let slip = '<div class="sp-card"><div class="sp-ttl">인수증</div><div class="sp-slip empty">아직 인수한 게 없습니다.</div></div>';
     if (cs.handedOver && cs.data) {
@@ -312,7 +348,7 @@ function renderAppraise(cs) {
             ${d.persona ? `<div class="sp-memo"><span class="memo-lbl">감정사 메모</span> ${esc(d.persona)}</div>` : ''}
           </div></div>`;
     }
-    return top + assets + slip;
+    return top + assets + spendCard + slip;
 }
 
 function renderVault(st) {
@@ -344,7 +380,9 @@ function renderLogRow(r) {
         } else detail = '<div class="sp-review"><div class="empty-hint">후기 불러오는 중…</div></div>';
     }
     return `<div class="sp-logrow ${open ? 'open' : ''}" data-act="logopen" data-id="${r.id}">
-      <span class="li-ic">${esc(r.ic || '•')}</span><span class="li-n">${esc(r.n)}</span><span class="li-p ${r.pay > 0 ? '' : 'zero'}">${esc(r.sign)}</span>
+      <span class="li-ic">${esc(r.ic || '•')}</span>
+      <div class="li-body"><div class="li-n">${esc(r.n)}</div>${r.incident ? `<div class="li-inc">특이사항 · ${esc(r.incident)}</div>` : ''}</div>
+      <span class="li-p ${r.pay > 0 ? '' : 'zero'}">${esc(r.sign)}</span>
       <span class="li-arrow">${open ? '▴' : '▾'}</span></div>${detail}`;
 }
 function renderWork(cs) {
@@ -423,7 +461,7 @@ async function onAction(e) {
     else if (act === 'work') {
         const a = ensureAlba(cs), j = a.jobs[+el.dataset.idx]; if (!j) return;
         cs.balance += j.pay * 1e4; a.jobs.splice(+el.dataset.idx, 1);
-        cs.workLog = [{ id: newWorkId(), ic: j.ic, n: j.n, pay: j.pay, note: j.note, sign: j.pay > 0 ? `+${j.pay}만원` : '±0', review: null }, ...(cs.workLog || [])].slice(0, 20);
+        cs.workLog = [{ id: newWorkId(), ic: j.ic, n: j.n, pay: j.pay, note: j.note, incident: pickIncident(), sign: j.pay > 0 ? `+${j.pay}만원` : '±0', review: null }, ...(cs.workLog || [])].slice(0, 20);
         saveState(); render();
     }
     else if (act === 'reroll') {
@@ -431,6 +469,10 @@ async function onAction(e) {
         if (a.resetAt && Date.now() < a.resetAt) return;
         if (a.rolls >= a.budget) { a.resetAt = Date.now() + COOLDOWN_MS; toastr.info(SNARK[Math.floor(Math.random() * SNARK.length)], '알바지옥'); saveState(); render(); return; }
         a.rolls += 1; a.jobs = rollPage(); saveState(); render();
+    }
+    else if (act === 'spend') {
+        const d = await genSpending(ui.sel);
+        if (d?.items) { cs.todaySpend = d.items.slice(0, 3); saveState(); render(); }
     }
     else if (act === 'clearlog') { cs.workLog = []; ui.openLog = null; saveState(); render(); }
     else if (act === 'logopen') {

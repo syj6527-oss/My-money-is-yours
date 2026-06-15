@@ -143,3 +143,17 @@
 .spoils-app .sp-diary{margin-top:8px; font-size:.85em; color:var(--ink); line-height:1.5;}
 .spoils-app .sp-rev{margin-top:6px; font-size:.85em; color:var(--ink-soft); font-style:italic; line-height:1.5;}
 .spoils-app .empty-hint{color:var(--ink-soft); font-style:italic; text-align:center; padding:8px;}
+
+/* 자산 등급 배지 */
+.spoils-app .sp-tier{display:inline-block; margin-left:8px; padding:2px 10px; border-radius:999px; font-size:.66em; font-weight:700; vertical-align:middle; background:linear-gradient(135deg,var(--moss-fill),var(--rosy-fill)); color:var(--rosy-deep);}
+/* 감정사 독설 */
+.spoils-app .sp-judge{margin-top:11px; padding:10px 12px; background:var(--rosy-fill); border-radius:12px; font-size:.9em; color:var(--rosy-deep); font-style:italic; line-height:1.5;}
+.spoils-app .sp-judge .jl{display:block; font-style:normal; font-weight:700; font-size:.74em; letter-spacing:.04em; color:var(--rosy-deep); opacity:.8; margin-bottom:3px;}
+/* 오늘의 소비 */
+.spoils-app .sp-spend{padding:8px 2px; border-bottom:1px dotted var(--line);}
+.spoils-app .sp-spend:last-child{border-bottom:0;}
+.spoils-app .sp-spend .ss-n{font-weight:600;}
+.spoils-app .sp-spend .ss-r{font-size:.82em; color:var(--ink-soft); font-style:italic; margin-top:2px;}
+/* 알바 특이사항 */
+.spoils-app .sp-logrow .li-body{flex:1; min-width:0;}
+.spoils-app .sp-logrow .li-inc{font-size:.74em; color:var(--rosy-deep); margin-top:2px; opacity:.9;}
