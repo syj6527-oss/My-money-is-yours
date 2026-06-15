@@ -1,129 +1,128 @@
-/* 💰 전리품 — 수련 연못 팔레트
-   #0A3323 darkgreen · #839958 moss · #F7F4D5 beige · #D3968C rosy · #105666 midnight */
+/* 💰 전리품 — 파스텔 수련 연못 (라이트) */
 
 /* 팝업 꽉 채우기 — ST 팝업 여백/배경 제거 */
-.popup:has(.spoils-app){ padding:0; background:#0A3323; border-color:rgba(247,244,213,.18); }
+.popup:has(.spoils-app){ padding:0; background:#FBF8EC; border-color:#ECE3CE; }
 .popup:has(.spoils-app) .popup-content,
 .popup:has(.spoils-app) .popup_content{ padding:0; margin:0; }
 .popup:has(.spoils-app) .popup-controls{ padding:10px 14px; }
 
 .spoils-app{
-  --sp-dark:#0A3323; --sp-moss:#839958; --sp-beige:#F7F4D5;
-  --sp-rosy:#D3968C; --sp-mid:#105666;
-  --sp-line:rgba(247,244,213,.18);
-  --sp-mono: ui-monospace,"SFMono-Regular","Menlo",monospace;
-  background:var(--sp-dark); color:var(--sp-beige);
-  border-radius:0; padding:0; overflow:hidden; width:100%; max-width:none; margin:0;
+  --bg:#FBF8EC; --card:#FFFFFF; --card2:#FFFBF1;
+  --ink:#3A5142; --ink-soft:#8A9486;
+  --moss:#8FA968; --moss-deep:#6E8A4C; --moss-fill:#E9F0D6;
+  --rosy:#D89A8E; --rosy-deep:#C57E72; --rosy-fill:#FBE6E0;
+  --mid:#4A93A6; --beige:#FBF6E8;
+  --line:#EDE6D5;
+  --mono: ui-monospace,"SFMono-Regular","Menlo",monospace;
+  background:var(--bg); color:var(--ink); width:100%; max-width:none; margin:0;
+  border-radius:0; padding:0; overflow:hidden; font-size:15px; line-height:1.45;
   font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
 }
 
-.spoils-app .sp-hd{padding:12px 16px; border-bottom:1px solid var(--sp-line);}
-.spoils-app .sp-logo{font-weight:800; letter-spacing:.12em; font-size:1.1em;}
+.spoils-app .sp-hd{padding:13px 16px; text-align:center;}
+.spoils-app .sp-logo{font-weight:800; letter-spacing:.06em; font-size:1.15em; color:var(--moss-deep);}
 
-/* 탭 */
-.spoils-app .sp-tabs{display:flex; background:rgba(16,86,102,.25); border-bottom:1px solid var(--sp-line);}
-.spoils-app .sp-tab{flex:1; padding:11px 0; text-align:center; cursor:pointer; font-size:.92em;
-  color:rgba(247,244,213,.55); border-bottom:2px solid transparent; user-select:none; letter-spacing:.04em;}
-.spoils-app .sp-tab.on{color:var(--sp-beige); border-bottom-color:var(--sp-moss); font-weight:700;}
-.spoils-app .sp-tab:hover{color:var(--sp-beige);}
+/* 탭 — 알약형 */
+.spoils-app .sp-tabs{display:flex; gap:6px; padding:0 12px 10px;}
+.spoils-app .sp-tab{flex:1; padding:9px 0; text-align:center; cursor:pointer; font-size:.9em;
+  color:var(--ink-soft); background:var(--moss-fill); border-radius:999px; user-select:none; transition:.15s;}
+.spoils-app .sp-tab.on{color:#fff; background:var(--moss); font-weight:700;}
+.spoils-app .sp-tab:not(.on):hover{color:var(--ink);}
 
-.spoils-app .sp-body{padding:14px 16px 18px;}
+.spoils-app .sp-body{padding:6px 14px 16px;}
 
 /* 카드 */
-.spoils-app .sp-card{background:rgba(0,0,0,.22); border:1px solid var(--sp-line); border-radius:9px; padding:12px 13px; margin-bottom:12px;}
+.spoils-app .sp-card{background:var(--card); border:1px solid var(--line); border-radius:16px;
+  padding:13px 14px; margin-bottom:12px; box-shadow:0 2px 10px rgba(110,138,76,.06);}
 .spoils-app .sp-card:last-child{margin-bottom:0;}
-.spoils-app .sp-ttl{font-size:.74em; letter-spacing:.16em; color:var(--sp-moss); text-transform:uppercase; margin-bottom:9px;}
-.spoils-app .sp-empty{color:rgba(247,244,213,.5); font-style:italic; text-align:center; padding:20px 8px;}
-.spoils-app .sp-done{margin-top:10px; text-align:right; font-size:.82em; color:var(--sp-rosy);}
+.spoils-app .sp-ttl{font-size:.82em; font-weight:700; color:var(--moss-deep); margin-bottom:9px; letter-spacing:.02em;}
+.spoils-app .sp-sub{color:var(--rosy-deep); font-weight:800; margin-left:4px;}
+.spoils-app .sp-empty{color:var(--ink-soft); font-style:italic; text-align:center; padding:18px 8px;}
+.spoils-app .sp-done{margin-top:10px; text-align:right; font-size:.82em; color:var(--rosy-deep);}
 
 .spoils-app .sp-charbar{display:flex; gap:8px; margin-bottom:12px; align-items:center;}
-.spoils-app .sp-select,.spoils-app .sp-in{
-  background:rgba(0,0,0,.3); color:var(--sp-beige); border:1px solid var(--sp-line);
-  border-radius:7px; padding:8px 10px; font-size:.9em; font-family:inherit;}
-.spoils-app .sp-select{flex:1; min-width:0;}
+.spoils-app .sp-select{flex:1; min-width:0; background:var(--card2); color:var(--ink);
+  border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:.92em; font-family:inherit;}
 
 /* 버튼 */
-.spoils-app .sp-btn{background:var(--sp-moss); color:#16240c; border:none; cursor:pointer;
-  font-weight:700; border-radius:7px; padding:8px 14px; font-size:.88em; white-space:nowrap; font-family:inherit;}
-.spoils-app .sp-btn.ghost{background:transparent; color:var(--sp-beige); border:1px solid var(--sp-line);}
-.spoils-app .sp-btn.ghost:hover{border-color:var(--sp-moss); color:var(--sp-moss);}
-.spoils-app .sp-btn.sm{padding:5px 9px; font-size:.78em;}
+.spoils-app .sp-btn{background:var(--moss); color:#fff; border:none; cursor:pointer; font-weight:700;
+  border-radius:999px; padding:9px 16px; font-size:.88em; white-space:nowrap; font-family:inherit; box-shadow:0 2px 6px rgba(110,138,76,.25);}
+.spoils-app .sp-btn:hover{background:var(--moss-deep);}
+.spoils-app .sp-btn.ghost{background:var(--moss-fill); color:var(--moss-deep); box-shadow:none;}
+.spoils-app .sp-btn.ghost:hover{background:#DFE9C6;}
+.spoils-app .sp-btn.sm{padding:6px 12px; font-size:.8em;}
 .spoils-app .sp-btn:active{transform:translateY(1px);}
-.spoils-app .sp-mini{background:transparent; border:1px solid var(--sp-line); color:var(--sp-rosy);
-  border-radius:6px; padding:3px 8px; font-size:.72em; cursor:pointer; font-family:inherit; white-space:nowrap;}
-.spoils-app .sp-mini:hover{border-color:var(--sp-rosy);}
+.spoils-app .sp-mini{background:var(--rosy-fill); border:none; color:var(--rosy-deep); border-radius:999px;
+  padding:5px 10px; font-size:.74em; cursor:pointer; font-family:inherit; white-space:nowrap; font-weight:600;}
+.spoils-app .sp-mini:hover{background:#F7D8CF;}
 
-/* 명세 줄 */
-.spoils-app .sp-line{display:grid; grid-template-columns:1.5em minmax(0,1fr) auto; grid-template-areas:"i n v" ". note note";
-  column-gap:8px; align-items:baseline; padding:7px 2px; border-bottom:1px dotted var(--sp-line);}
-.spoils-app .sp-vault .sp-line{grid-template-columns:1.5em minmax(0,1fr) auto auto; grid-template-areas:"i n v b" ". note note note";}
+/* 명세 줄 — 값을 이름 아래로 쌓아 안 깨지게 */
+.spoils-app .sp-line{display:grid; grid-template-columns:1.9em 1fr auto;
+  grid-template-areas:"i n b" "i v b" "i note b"; column-gap:8px; align-items:start;
+  padding:9px 2px; border-bottom:1px solid var(--line);}
 .spoils-app .sp-line:last-child{border-bottom:0;}
-.spoils-app .sp-line .ic{grid-area:i;}
+.spoils-app .sp-line .ic{grid-area:i; font-size:1.05em; padding-top:1px;}
 .spoils-app .sp-line .nm{grid-area:n; font-weight:600; word-break:break-word;}
-.spoils-app .sp-line .vl{grid-area:v; text-align:right; font-family:var(--sp-mono); white-space:nowrap; font-variant-numeric:tabular-nums;}
-.spoils-app .sp-line .nt{grid-area:note; font-size:.78em; color:rgba(247,244,213,.5); font-style:italic; margin-top:2px;}
+.spoils-app .sp-line .vl{grid-area:v; font-family:var(--mono); color:var(--mid); font-size:.95em; margin-top:1px; overflow-wrap:anywhere;}
+.spoils-app .sp-line .nt{grid-area:note; font-size:.8em; color:var(--ink-soft); font-style:italic; margin-top:2px;}
 .spoils-app .sp-line .sp-mini{grid-area:b; align-self:center;}
-.spoils-app .sp-line.zero .vl{color:rgba(247,244,213,.45);}
+.spoils-app .sp-line.zero .vl{color:var(--ink-soft);}
 
-.spoils-app .sp-income{display:flex; justify-content:space-between; align-items:baseline; padding:8px 2px 11px; margin-bottom:6px; border-bottom:1px solid var(--sp-line);}
-.spoils-app .sp-income .lbl{font-size:.82em; color:rgba(247,244,213,.6);}
-.spoils-app .sp-income .amt{font-family:var(--sp-mono); font-size:1.1em; color:var(--sp-moss); font-weight:700;}
-.spoils-app .sp-income .src{display:block; font-size:.74em; color:rgba(247,244,213,.5); text-align:right; font-style:italic;}
+.spoils-app .sp-income{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+  padding:4px 2px 11px; margin-bottom:5px; border-bottom:1px solid var(--line);}
+.spoils-app .sp-income .lbl{flex-shrink:0; white-space:nowrap; font-size:.85em; color:var(--ink-soft); padding-top:2px;}
+.spoils-app .sp-income .r{text-align:right; min-width:0;}
+.spoils-app .sp-income .amt{font-family:var(--mono); font-size:1.05em; color:var(--moss-deep); font-weight:700; overflow-wrap:anywhere;}
+.spoils-app .sp-income .src{display:block; font-size:.76em; color:var(--ink-soft); font-style:italic;}
 
-.spoils-app .sp-total{display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; padding-top:9px; border-top:1px solid var(--sp-line);}
-.spoils-app .sp-total .lbl{font-size:.82em; color:rgba(247,244,213,.6);}
-.spoils-app .sp-total .amt{font-family:var(--sp-mono); font-size:1.2em; font-weight:800;}
+.spoils-app .sp-total{display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+  margin-top:10px; padding-top:10px; border-top:2px solid var(--moss-fill);}
+.spoils-app .sp-total .lbl{flex-shrink:0; white-space:nowrap; font-size:.85em; color:var(--ink-soft); padding-top:3px;}
+.spoils-app .sp-total .amt{font-family:var(--mono); font-size:1.15em; font-weight:800; text-align:right; overflow-wrap:anywhere; color:var(--ink);}
 .spoils-app .sp-handover{display:flex; justify-content:flex-end; margin-top:12px;}
 
-.spoils-app .sp-tag{font-size:.64em; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle;}
-.spoils-app .sp-tag.from{background:rgba(211,150,140,.22); color:var(--sp-rosy);}
-.spoils-app .sp-tag.mine{background:rgba(131,153,88,.22); color:var(--sp-moss);}
+.spoils-app .sp-tag{font-size:.66em; padding:2px 7px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:600;}
+.spoils-app .sp-tag.from{background:var(--rosy-fill); color:var(--rosy-deep);}
 
-/* 인수증 — 베이지 종이 */
-.spoils-app .sp-slip{position:relative; background:var(--sp-beige); color:var(--sp-dark);
-  border-radius:8px; padding:16px 16px 18px; font-family:var(--sp-mono);}
-.spoils-app .sp-slip.empty{color:#7a8a6a; text-align:center; font-style:italic; font-family:inherit; padding:24px; background:rgba(247,244,213,.06);}
-.spoils-app .sp-slip .sp-line{border-bottom-color:rgba(10,51,35,.15);}
-.spoils-app .sp-slip .sp-line .nm{color:var(--sp-dark);}
-.spoils-app .sp-slip .sp-line .vl{color:var(--sp-mid);}
-.spoils-app .sp-slip .sp-total{border-top-color:rgba(10,51,35,.2);}
-.spoils-app .sp-slip .sp-total .lbl{color:#5a6a4a;}
-.spoils-app .sp-slip .sp-total .amt{color:var(--sp-dark);}
-.spoils-app .sp-sh{text-align:center; border-bottom:1px dashed rgba(10,51,35,.25); padding-bottom:9px; margin-bottom:10px;}
-.spoils-app .sp-sh .t{font-size:1.15em; font-weight:800; letter-spacing:.22em; font-family:inherit;}
-.spoils-app .sp-sh .s{font-size:.78em; color:#5a6a4a; margin-top:3px;}
-.spoils-app .sp-verdict{margin-top:12px; padding-top:9px; border-top:1px dashed rgba(10,51,35,.25); text-align:center; font-style:italic; color:#4a5a3a; font-family:inherit; font-size:.88em;}
-.spoils-app .sp-memo{margin-top:9px; padding-top:8px; border-top:1px dotted rgba(10,51,35,.2); font-family:inherit; font-size:.8em; color:#5a6a4a; line-height:1.5;}
-.spoils-app .sp-memo .memo-lbl{color:var(--sp-mid); font-weight:700; margin-right:5px;}
-.spoils-app .sp-stamp{position:absolute; top:14px; right:10px; border:2.5px solid var(--sp-rosy); color:var(--sp-rosy);
-  font-family:inherit; font-weight:800; font-size:.7em; letter-spacing:.22em; padding:5px 9px; border-radius:4px;
-  transform:rotate(-11deg); opacity:.85; pointer-events:none;}
+/* 인수증 — 파스텔 종이 */
+.spoils-app .sp-slip{position:relative; background:var(--beige); border:1.5px dashed var(--rosy);
+  border-radius:14px; padding:16px 16px 18px; font-family:var(--mono); color:var(--ink);}
+.spoils-app .sp-slip.empty{color:var(--ink-soft); text-align:center; font-style:italic; font-family:inherit; padding:24px; border-style:solid; border-color:var(--line); background:var(--card2);}
+.spoils-app .sp-slip .sp-line{border-bottom-color:rgba(216,154,142,.25);}
+.spoils-app .sp-slip .sp-line .vl{color:var(--mid);}
+.spoils-app .sp-slip .sp-total{border-top-color:rgba(216,154,142,.4);}
+.spoils-app .sp-sh{text-align:center; border-bottom:1px dashed rgba(216,154,142,.5); padding-bottom:9px; margin-bottom:8px;}
+.spoils-app .sp-sh .t{font-size:1.1em; font-weight:800; letter-spacing:.18em; font-family:inherit; color:var(--moss-deep);}
+.spoils-app .sp-sh .s{font-size:.78em; color:var(--ink-soft); margin-top:3px;}
+.spoils-app .sp-verdict{margin-top:12px; padding-top:9px; border-top:1px dashed rgba(216,154,142,.5); text-align:center; font-style:italic; color:var(--ink-soft); font-family:inherit; font-size:.88em;}
+.spoils-app .sp-memo{margin-top:9px; padding-top:8px; border-top:1px dotted rgba(216,154,142,.4); font-family:inherit; font-size:.8em; color:var(--ink-soft); line-height:1.5;}
+.spoils-app .sp-memo .memo-lbl{color:var(--rosy-deep); font-weight:700; margin-right:5px;}
+.spoils-app .sp-stamp{position:absolute; top:14px; right:10px; border:2.5px solid var(--rosy); color:var(--rosy-deep);
+  font-family:inherit; font-weight:800; font-size:.68em; letter-spacing:.2em; padding:5px 9px; border-radius:6px;
+  transform:rotate(-11deg); opacity:.9; pointer-events:none; background:rgba(255,255,255,.4);}
 
-/* 금고 / 잔액 */
-.spoils-app .sp-balance{text-align:center; padding:14px; margin-bottom:12px;
-  background:linear-gradient(180deg, rgba(16,86,102,.4), rgba(0,0,0,.2)); border:1px solid var(--sp-line); border-radius:9px;}
-.spoils-app .sp-balance .lbl{font-size:.74em; letter-spacing:.16em; color:rgba(247,244,213,.6);}
-.spoils-app .sp-balance .amt{font-family:var(--sp-mono); font-size:1.9em; font-weight:800; color:var(--sp-moss); margin-top:3px;}
-.spoils-app .sp-addrow{display:flex; gap:6px; margin-bottom:10px;}
-.spoils-app .sp-addrow .nm{flex:2; min-width:0;}
-.spoils-app .sp-addrow .vl{flex:1; min-width:0; font-family:var(--sp-mono);}
+/* 잔액 카드 */
+.spoils-app .sp-balance{text-align:center; padding:15px; margin-bottom:12px;
+  background:linear-gradient(135deg, var(--moss-fill), var(--rosy-fill)); border-radius:16px;}
+.spoils-app .sp-balance .lbl{font-size:.76em; color:var(--ink-soft); letter-spacing:.04em;}
+.spoils-app .sp-balance .amt{font-family:var(--mono); font-size:1.9em; font-weight:800; color:var(--moss-deep); margin-top:3px;}
 
 /* 알바지옥 */
-.spoils-app .sp-cardhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:9px;}
+.spoils-app .sp-cardhead{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;}
 .spoils-app .sp-cardhead .sp-ttl{margin-bottom:0;}
-.spoils-app .sp-budget{color:var(--sp-rosy); letter-spacing:0; font-size:.92em; margin-left:6px;}
-.spoils-app .sp-job{display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px dotted var(--sp-line);}
+.spoils-app .sp-budget{color:var(--rosy-deep); font-weight:700; font-size:.92em; margin-left:6px;}
+.spoils-app .sp-job{display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px solid var(--line);}
 .spoils-app .sp-job:last-child{border-bottom:0;}
-.spoils-app .sp-job .ji{font-size:1.3em;}
+.spoils-app .sp-job .ji{font-size:1.4em;}
 .spoils-app .sp-job .jbody{flex:1; min-width:0;}
 .spoils-app .sp-job .jn{font-weight:600;}
-.spoils-app .sp-job .jp{font-size:.76em; color:rgba(247,244,213,.55);}
-.spoils-app .sp-wait{text-align:center; padding:18px 8px; color:var(--sp-rosy); font-style:italic;}
-.spoils-app .sp-cdt{font-family:var(--sp-mono); font-style:normal;}
-.spoils-app .sp-log{margin-top:10px; background:rgba(0,0,0,.25); border:1px solid var(--sp-line); border-radius:8px;
-  padding:10px 12px; font-size:.82em; color:rgba(247,244,213,.6); font-family:var(--sp-mono); max-height:150px; overflow:auto;}
-.spoils-app .sp-log .row{padding:3px 0; border-bottom:1px dotted var(--sp-line);}
+.spoils-app .sp-job .jp{font-size:.78em; color:var(--ink-soft);}
+.spoils-app .sp-wait{text-align:center; padding:18px 8px; color:var(--rosy-deep); font-style:italic;}
+.spoils-app .sp-cdt{font-family:var(--mono); font-style:normal; font-weight:700;}
+.spoils-app .sp-log{margin-top:10px; background:var(--card2); border:1px solid var(--line); border-radius:12px;
+  padding:10px 12px; font-size:.82em; color:var(--ink-soft); font-family:var(--mono); max-height:150px; overflow:auto;}
+.spoils-app .sp-log .row{padding:3px 0; border-bottom:1px dotted var(--line);}
 .spoils-app .sp-log .row:last-child{border-bottom:0;}
-.spoils-app .sp-log .plus{color:var(--sp-moss);}
-.spoils-app .sp-log .dim{opacity:.7;}
-.spoils-app .empty-hint{color:rgba(247,244,213,.5); font-style:italic; text-align:center; padding:6px;}
+.spoils-app .sp-log .plus{color:var(--moss-deep); font-weight:700;}
+.spoils-app .sp-log .dim{opacity:.75;}
+.spoils-app .empty-hint{color:var(--ink-soft); font-style:italic; text-align:center; padding:6px;}
