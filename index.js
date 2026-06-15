@@ -433,7 +433,7 @@ async function openPanel() {
     $box.on('click', onAction);
     $box.on('change', onChange);
     render();
-    await c.callGenericPopup($box[0], c.POPUP_TYPE.TEXT, '', { wide: true, large: true, allowVerticalScrolling: true });
+    await c.callGenericPopup($box[0], c.POPUP_TYPE.TEXT, '', { wide: true, allowVerticalScrolling: true });
 }
 
 // ──────────────────────────────────────────────

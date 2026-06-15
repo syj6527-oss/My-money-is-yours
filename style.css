@@ -1,13 +1,19 @@
 /* 💰 전리품 — 수련 연못 팔레트
    #0A3323 darkgreen · #839958 moss · #F7F4D5 beige · #D3968C rosy · #105666 midnight */
 
+/* 팝업 꽉 채우기 — ST 팝업 여백/배경 제거 */
+.popup:has(.spoils-app){ padding:0; background:#0A3323; border-color:rgba(247,244,213,.18); }
+.popup:has(.spoils-app) .popup-content,
+.popup:has(.spoils-app) .popup_content{ padding:0; margin:0; }
+.popup:has(.spoils-app) .popup-controls{ padding:10px 14px; }
+
 .spoils-app{
   --sp-dark:#0A3323; --sp-moss:#839958; --sp-beige:#F7F4D5;
   --sp-rosy:#D3968C; --sp-mid:#105666;
   --sp-line:rgba(247,244,213,.18);
   --sp-mono: ui-monospace,"SFMono-Regular","Menlo",monospace;
   background:var(--sp-dark); color:var(--sp-beige);
-  border-radius:12px; padding:0; overflow:hidden; max-width:600px; margin:0 auto;
+  border-radius:0; padding:0; overflow:hidden; width:100%; max-width:none; margin:0;
   font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
 }
 
