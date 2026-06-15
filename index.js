@@ -154,7 +154,7 @@ async function appraise(char) {
     toastr.info(`${char.name} 감정 중…`, '💰 전리품', { timeOut: 0, tag: 'spoils' });
     try {
         const [card, chat, lore] = [gatherCard(char), gatherChat(), await gatherLore(char)];
-        const resp = await c.ConnectionManagerRequestService.sendRequest(profileId, buildPrompt(char.name, card, chat, lore), 1800);
+        const resp = await c.ConnectionManagerRequestService.sendRequest(profileId, buildPrompt(char.name, card, chat, lore), 4096);
         const raw = (typeof resp === 'string') ? resp : (resp?.content ?? '');
         console.log(LOG, '원문 응답:', raw);
         toastr.clear();
@@ -162,7 +162,12 @@ async function appraise(char) {
     } catch (e) {
         toastr.clear();
         console.error(LOG, '감정 실패', e);
-        toastr.error('감정 실패. 콘솔 확인.');
+        const msg = String(e?.message || e);
+        if (/empty|candidate|safety|block/i.test(msg)) {
+            toastr.error('모델이 빈 응답을 반환했어. 연결 프로필의 Gemini 안전설정(Safety)을 끄거나 다른 프로필로 시도해봐.', '', { timeOut: 8000 });
+        } else {
+            toastr.error('감정 실패. 콘솔 확인.');
+        }
         return null;
     }
 }
