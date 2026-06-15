@@ -130,3 +130,13 @@
 .spoils-app .sp-log .plus{color:var(--moss-deep); font-weight:700;}
 .spoils-app .sp-log .dim{opacity:.75;}
 .spoils-app .empty-hint{color:var(--ink-soft); font-style:italic; text-align:center; padding:6px;}
+
+/* 카테고리 섹션 */
+.spoils-app .sp-bar-btns{display:flex; gap:6px; flex-shrink:0;}
+.spoils-app .sp-cat{margin-bottom:4px;}
+.spoils-app .sp-cat-hd{display:flex; justify-content:space-between; align-items:center;
+  font-size:.74em; font-weight:700; color:var(--rosy-deep); letter-spacing:.03em;
+  padding:9px 2px 3px; margin-top:4px; border-bottom:1px solid var(--moss-fill);}
+.spoils-app .sp-cat-sum{font-family:var(--mono); color:var(--ink-soft); font-weight:600;}
+.spoils-app .sp-mini.trash{background:#FBE9E0; color:#C57E72;}
+.spoils-app .sp-mini.trash:hover{background:#F6D2C7;}
