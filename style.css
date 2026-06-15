@@ -1,10 +1,13 @@
 /* 💰 전리품 — 파스텔 수련 연못 (라이트) */
 
-/* 팝업 꽉 채우기 — ST 팝업 여백/배경 제거 */
-.popup:has(.spoils-app){ padding:0; background:#FBF8EC; border-color:#ECE3CE; }
+/* 팝업 꽉 채우기 + 둥근 모서리 */
+.popup:has(.spoils-app){ padding:0; background:#FBF8EC; border-color:#ECE3CE; border-radius:20px; overflow:hidden; }
 .popup:has(.spoils-app) .popup-content,
 .popup:has(.spoils-app) .popup_content{ padding:0; margin:0; }
 .popup:has(.spoils-app) .popup-controls{ padding:10px 14px; }
+/* 우상단 닫기 X — 파스텔 톤 */
+.popup:has(.spoils-app) .popup-button-close{ color:#C57E72; opacity:.85; top:10px; right:12px; }
+.popup:has(.spoils-app) .popup-button-close:hover{ opacity:1; }
 
 .spoils-app{
   --bg:#FBF8EC; --card:#FFFFFF; --card2:#FFFBF1;
@@ -14,7 +17,7 @@
   --mid:#4A93A6; --beige:#FBF6E8;
   --line:#EDE6D5;
   --mono: ui-monospace,"SFMono-Regular","Menlo",monospace;
-  background:var(--bg); color:var(--ink); width:100%; max-width:none; margin:0;
+  background:var(--bg); color:var(--ink); width:100%; max-width:none; margin:0; text-align:left;
   border-radius:0; padding:0; overflow:hidden; font-size:15px; line-height:1.45;
   font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
 }
@@ -40,7 +43,8 @@
 .spoils-app .sp-empty{color:var(--ink-soft); font-style:italic; text-align:center; padding:18px 8px;}
 .spoils-app .sp-done{margin-top:10px; text-align:right; font-size:.82em; color:var(--rosy-deep);}
 
-.spoils-app .sp-charbar{display:flex; gap:8px; margin-bottom:12px; align-items:center;}
+.spoils-app .sp-charbar{display:flex; gap:8px; margin-bottom:12px; align-items:center; justify-content:space-between;}
+.spoils-app .sp-charname{font-weight:700; color:var(--moss-deep); font-size:1.02em; padding-left:2px;}
 .spoils-app .sp-select{flex:1; min-width:0; background:var(--card2); color:var(--ink);
   border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:.92em; font-family:inherit;}
 

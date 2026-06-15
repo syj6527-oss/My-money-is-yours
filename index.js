@@ -225,9 +225,12 @@ function charPicker() {
     if (ui.chars.length <= 1) return '';
     return `<select class="sp-select" data-act="pickchar">${ui.chars.map(ch => `<option value="${esc(ch.name)}" ${ch.name === ui.sel ? 'selected' : ''}>${esc(ch.name)}</option>`).join('')}</select>`;
 }
+function charLabel() {
+    return ui.chars.length > 1 ? charPicker() : `<span class="sp-charname">${esc(ui.sel)}</span>`;
+}
 
 function renderAppraise(cs) {
-    let top = `<div class="sp-charbar">${charPicker()}<button class="sp-btn" data-act="appraise">${cs.appraised ? '다시 감정' : '감정하기'}</button></div>`;
+    let top = `<div class="sp-charbar">${charLabel()}<button class="sp-btn" data-act="appraise">${cs.appraised ? '다시 감정' : '감정하기'}</button></div>`;
     let assets;
     if (cs.appraised && cs.data) {
         const d = cs.data;
@@ -302,7 +305,7 @@ function renderWork(cs) {
         ? cs.workLog.map(r => `<div class="row"><span class="plus">${esc(r.sign)}</span> · ${esc(r.n)} <span class="dim">— ${esc(r.note)}</span></div>`).join('')
         : '<div class="empty-hint">아직 한 일이 없습니다.</div>';
     return `
-      <div class="sp-charbar">${charPicker()}</div>
+      <div class="sp-charbar">${charLabel()}</div>
       <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div></div>
       <div class="sp-card">
         <div class="sp-cardhead"><span class="sp-ttl">일거리 <span class="sp-budget">${waiting ? '소진' : '굴리기 ' + left + '회 남음'}</span></span>
@@ -382,7 +385,7 @@ async function openPanel() {
     ui.$box = $box;
     $box.on('click', onAction); $box.on('change', onChange);
     render();
-    await c.callGenericPopup($box[0], c.POPUP_TYPE.TEXT, '', { wide: true, allowVerticalScrolling: true });
+    await c.callGenericPopup($box[0], c.POPUP_TYPE.DISPLAY, '', { wide: true, allowVerticalScrolling: true });
 }
 
 function refreshProfiles(c) {
