@@ -3,7 +3,14 @@
 
 const LOG = '[전리품]';
 const KEY = 'spoils';
-const COOLDOWN_MS = 60 * 60 * 1000;
+const COOLDOWN_MS = 30 * 60 * 1000; // 새 일거리 전체 리셋 30분
+const logBuf = [];
+function dbg(...args) {
+    const line = args.map(a => typeof a === 'string' ? a : (() => { try { return JSON.stringify(a); } catch (e) { return String(a); } })()).join(' ');
+    logBuf.push(`[${new Date().toLocaleTimeString()}] ${line}`);
+    if (logBuf.length > 120) logBuf.shift();
+    console.log(LOG, ...args);
+}
 const CATS = ['현금', '예적금', '주식·투자', '부동산', '차량', '귀중품', '물건'];
 const CAT_ICON = { '현금': '💵', '예적금': '🏦', '주식·투자': '📈', '부동산': '🏠', '차량': '🚗', '귀중품': '💎', '물건': '📦' };
 
@@ -33,8 +40,9 @@ function sumAll(items) { return (items || []).reduce((s, it) => s + parseWon(it.
 // ── 상태 ──
 function getState() {
     const md = ctx().chatMetadata; if (!md) return null;
-    if (!md[KEY]) md[KEY] = { vault: [], userAssets: [], userData: null, chars: {} };
+    if (!md[KEY]) md[KEY] = { vault: [], userAssets: [], userData: null, chars: {}, extraNames: [] };
     if (!md[KEY].userAssets) md[KEY].userAssets = [];
+    if (!md[KEY].extraNames) md[KEY].extraNames = [];
     return md[KEY];
 }
 function saveState() {
@@ -99,6 +107,8 @@ function buildPrompt(name, card, chat, lore) {
 - 자산 수준과 무관하게, "물건" category에는 거의 쓰레기에 가까운 잡템을 1~3개 반드시 섞는다.
   (예: 한 짝뿐인 양말, 말라붙은 볼펜, 영수증 뭉치, 다 쓴 기프티콘, 바닥에 굴러다니던 동전, 유통기한 지난 사탕)
   부자 주머니에도 잡동사니는 있다. 0원이나 푼돈으로 진지하게 적는다.
+- 각 category 안에서도 구체적이고 서로 다른 품목으로 채운다. 뻔한 일반명사 나열은 피한다.
+  (부동산=구체 매물·지역, 주식·투자=종목/코인명, 차량=구체 모델, 귀중품=구체 명품/보석/시계, 예적금=상품명·통화)
 - 금액(value/worth)은 숫자+통화 위주로. 비꼬는 부연은 note에, 금액 옆 괄호는 한두 단어로 짧게.
 - note는 짧고 건조하게. persona는 성격+말투 한 줄 요약, 역시 건조하게.
 - 세계관에 맞는 통화·단위. 대상/채팅과 같은 언어로. 불명확하면 한국어.
@@ -132,23 +142,30 @@ async function llmJSON(prompt, tokens) {
     if (!pid) { toastr.warning('설정창(Extensions → 💰 전리품)에서 연결 프로필을 골라줘'); return null; }
     const resp = await c.ConnectionManagerRequestService.sendRequest(pid, prompt, tokens || 4096);
     const raw = (typeof resp === 'string') ? resp : (resp?.content ?? '');
-    console.log(LOG, '원문 응답:', raw);
+    dbg('응답:', String(raw).slice(0, 600));
     return parseResult(raw);
 }
 async function runAppraisal(name, card, lore) {
     if (!profileId()) { toastr.warning('설정창(Extensions → 💰 전리품)에서 연결 프로필을 골라줘'); return null; }
+    dbg('감정 시작:', name);
     toastr.info(`${name} 감정 중…`, '💰 전리품', { timeOut: 0, tag: 'spoils' });
     try { const d = await llmJSON(buildPrompt(name, card, gatherChat(), lore), 4096); toastr.clear(); return d; }
     catch (e) {
-        toastr.clear(); console.error(LOG, '감정 실패', e);
+        toastr.clear(); dbg('감정 실패:', e?.message || String(e));
         const msg = String(e?.message || e);
         if (/empty|candidate|safety|block/i.test(msg)) toastr.error('모델이 빈 응답을 반환했어. 연결 프로필 안전설정을 끄거나 토큰을 늘려봐.', '', { timeOut: 8000 });
-        else toastr.error('감정 실패. 콘솔 확인.');
+        else toastr.error('감정 실패. 콘솔/로그 확인.');
         return null;
     }
 }
 async function appraiseChar(char) { return runAppraisal(char.name, gatherCard(char), await gatherLore(char)); }
 async function appraiseUser() { const u = gatherUserCard(); return runAppraisal(u.name, u.card, ''); }
+async function appraiseByName(name) {
+    const base = ui.chars[0];
+    const card = base ? gatherCard(base) : '';
+    const lore = base ? await gatherLore(base) : '';
+    return runAppraisal(name, card, lore);
+}
 function normItems(d) { return (d.items || []).map(it => ({ category: CATS.includes(it.category) ? it.category : '물건', icon: it.icon, name: it.name, value: it.value, note: it.note })); }
 
 // ── 알바지옥 ──
@@ -193,6 +210,9 @@ function ensureAlba(cs) {
         cs.alba = { budget: 3 + Math.floor(Math.random() * 3), rolls: 0, jobs: rollPage(), resetAt: null };
     return cs.alba;
 }
+let logSeq = 0;
+function newWorkId() { return 'w' + Date.now().toString(36) + '-' + (logSeq++).toString(36); }
+function migrateLog(cs) { (cs.workLog || []).forEach(r => { if (!r.id) r.id = newWorkId(); }); }
 async function genReview(cs, entry) {
     const char = ui.chars.find(x => x.name === ui.sel);
     const tone = cs.data?.persona || (char ? gatherCard(char).slice(0, 1500) : '');
@@ -211,8 +231,9 @@ function pinToChat(name, text) {
     try {
         const safe = String(text).replace(/[|\n\r]/g, ' ').trim();
         c.executeSlashCommands(`/sendas name="${String(name).replace(/"/g, '')}" ${safe}`);
+        dbg('채팅 삽입:', name, safe.slice(0, 60));
         toastr.success('채팅에 반영했어');
-    } catch (e) { console.error(LOG, '채팅 삽입 실패', e); toastr.error('채팅 삽입 실패. 콘솔 확인.'); }
+    } catch (e) { dbg('채팅 삽입 실패:', e?.message || String(e)); toastr.error('채팅 삽입 실패. 콘솔/로그 확인.'); }
 }
 
 // ── 렌더 ──
@@ -253,12 +274,19 @@ function render() {
     const body = ui.tab === 'appraise' ? renderAppraise(cs) : ui.tab === 'vault' ? renderVault(st) : renderWork(cs);
     ui.$box.html(`${top}<div class="sp-body">${body}</div>`);
 }
-function charPicker() { return `<select class="sp-select" data-act="pickchar">${ui.chars.map(ch => `<option value="${esc(ch.name)}" ${ch.name === ui.sel ? 'selected' : ''}>${esc(ch.name)}</option>`).join('')}</select>`; }
-function charLabel() { return ui.chars.length > 1 ? charPicker() : `<span class="sp-charname">${esc(ui.sel)}</span>`; }
+function selectableNames() {
+    const base = ui.chars.map(c => c.name);
+    const ex = (getState()?.extraNames) || [];
+    return [...new Set([...base, ...ex])];
+}
+function charPicker() { return `<select class="sp-select" data-act="pickchar">${selectableNames().map(n => `<option value="${esc(n)}" ${n === ui.sel ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`; }
+function charLabel() { return selectableNames().length > 1 ? charPicker() : `<span class="sp-charname">${esc(ui.sel)}</span>`; }
 
 function renderAppraise(cs) {
-    const multi = ui.chars.length > 1;
-    const top = `<div class="sp-charbar">${charLabel()}<span class="sp-bar-btns">${multi ? '<button class="sp-btn ghost sm" data-act="appraiseall">전체 감정</button>' : ''}<button class="sp-btn sm" data-act="appraise">${cs.appraised ? '다시 감정' : '감정하기'}</button></span></div>`;
+    const multi = selectableNames().length > 1;
+    const isExtra = !ui.chars.find(x => x.name === ui.sel);
+    const top = `<div class="sp-charbar">${charLabel()}<span class="sp-bar-btns">${multi ? '<button class="sp-btn ghost sm" data-act="appraiseall">전체 감정</button>' : ''}<button class="sp-btn sm" data-act="appraise">${cs.appraised ? '다시 감정' : '감정하기'}</button></span></div>
+      <div class="sp-addchar"><input class="sp-in" data-act="newchar" placeholder="이 시트 속 다른 인물 이름 추가"><button class="sp-mini" data-act="addchar">+ 추가</button>${isExtra ? '<button class="sp-mini trash" data-act="rmchar">제거</button>' : ''}</div>`;
     let assets;
     if (cs.appraised && cs.data) {
         const d = cs.data;
@@ -303,7 +331,7 @@ function renderVault(st) {
 }
 
 function renderLogRow(r) {
-    const open = ui.openLog === r.id;
+    const open = ui.openLog != null && ui.openLog === r.id;
     let detail = '';
     if (open) {
         if (r.review) {
@@ -320,6 +348,7 @@ function renderLogRow(r) {
       <span class="li-arrow">${open ? '▴' : '▾'}</span></div>${detail}`;
 }
 function renderWork(cs) {
+    migrateLog(cs);
     const a = ensureAlba(cs);
     const waiting = a.resetAt && Date.now() < a.resetAt;
     const left = a.budget - a.rolls;
@@ -350,15 +379,30 @@ async function onAction(e) {
 
     if (act === 'close') { ui.popup?.complete?.(1); }
     else if (act === 'appraise') {
-        const data = await appraiseChar(ui.chars.find(x => x.name === ui.sel));
+        const char = ui.chars.find(x => x.name === ui.sel);
+        const data = char ? await appraiseChar(char) : await appraiseByName(ui.sel);
         if (data) { cs.appraised = true; cs.data = { ...data, items: normItems(data) }; cs.handedOver = false; cs.balance = sumCat(cs.data.items, '현금'); saveState(); render(); }
     }
     else if (act === 'appraiseall') {
-        for (const ch of ui.chars) {
-            const data = await appraiseChar(ch);
-            if (data) { const c2 = charState(ch.name); c2.appraised = true; c2.data = { ...data, items: normItems(data) }; c2.handedOver = false; c2.balance = sumCat(c2.data.items, '현금'); }
+        for (const n of selectableNames()) {
+            const char = ui.chars.find(x => x.name === n);
+            const data = char ? await appraiseChar(char) : await appraiseByName(n);
+            if (data) { const c2 = charState(n); c2.appraised = true; c2.data = { ...data, items: normItems(data) }; c2.handedOver = false; c2.balance = sumCat(c2.data.items, '현금'); }
         }
         saveState(); render(); toastr.success('전체 감정 완료');
+    }
+    else if (act === 'addchar') {
+        const v = (ui.$box.find('[data-act="newchar"]').val() || '').trim();
+        if (!v) return;
+        st.extraNames = st.extraNames || [];
+        if (!st.extraNames.includes(v) && !ui.chars.find(x => x.name === v)) st.extraNames.push(v);
+        ui.sel = v; saveState(); render();
+    }
+    else if (act === 'rmchar') {
+        st.extraNames = (st.extraNames || []).filter(n => n !== ui.sel);
+        delete st.chars[ui.sel];
+        ui.sel = ui.chars[0]?.name || st.extraNames[0] || ui.sel;
+        saveState(); render();
     }
     else if (act === 'appraiseuser') {
         const d = await appraiseUser();
@@ -379,7 +423,7 @@ async function onAction(e) {
     else if (act === 'work') {
         const a = ensureAlba(cs), j = a.jobs[+el.dataset.idx]; if (!j) return;
         cs.balance += j.pay * 1e4; a.jobs.splice(+el.dataset.idx, 1);
-        cs.workLog = [{ id: Date.now() + Math.random().toString(36).slice(2, 6), ic: j.ic, n: j.n, pay: j.pay, note: j.note, sign: j.pay > 0 ? `+${j.pay}만원` : '±0', review: null }, ...(cs.workLog || [])].slice(0, 20);
+        cs.workLog = [{ id: newWorkId(), ic: j.ic, n: j.n, pay: j.pay, note: j.note, sign: j.pay > 0 ? `+${j.pay}만원` : '±0', review: null }, ...(cs.workLog || [])].slice(0, 20);
         saveState(); render();
     }
     else if (act === 'reroll') {
@@ -430,6 +474,7 @@ async function openPanel() {
     render();
     const popup = new c.Popup($box[0], c.POPUP_TYPE.DISPLAY, '', { wide: true, allowVerticalScrolling: true });
     ui.popup = popup;
+    try { popup.dlg?.querySelectorAll?.('.popup-button-close, .popup_cross, [class*="close"]').forEach(el => el.remove()); } catch (e) { dbg('ST 닫기 제거 실패:', e?.message || e); }
     await popup.show();
 }
 function refreshProfiles(c) {
@@ -443,13 +488,31 @@ function initSettings(c) {
     $('#extensions_settings').append(`
       <div id="spoils_settings" class="spoils-settings"><div class="inline-drawer">
         <div class="inline-drawer-toggle inline-drawer-header"><b>💰 전리품</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div>
-        <div class="inline-drawer-content"><label for="spoils_profile">연결 프로필</label>
+        <div class="inline-drawer-content"><label id="spoils_profile_label" for="spoils_profile" style="cursor:pointer; user-select:none;">연결 프로필</label>
           <select id="spoils_profile" class="text_pole"></select>
           <small class="opacity50p">감정에 쓸 API. 비워두면 ST 전역 선택 프로필을 따라감.</small>
+          <div style="margin-top:8px;"><input id="spoils_save" type="button" class="menu_button" value="저장"></div>
+          <div id="spoils_logwrap" style="display:none; margin-top:10px;">
+            <label>로그</label>
+            <textarea id="spoils_log" class="text_pole" rows="8" readonly style="font-family:monospace; font-size:.8em;"></textarea>
+            <div style="margin-top:6px;"><input id="spoils_log_clear" type="button" class="menu_button" value="로그 비우기"></div>
+          </div>
         </div></div></div>`);
     refreshProfiles(c);
     $('#spoils_profile').on('change', function () { c.extensionSettings.spoils.profileId = $(this).val(); c.saveSettingsDebounced(); });
     $('#spoils_settings .inline-drawer-toggle').on('click', () => refreshProfiles(c));
+    $('#spoils_save').on('click', () => { c.saveSettingsDebounced(); toastr.success('저장됐어', '💰 전리품'); });
+    let tap = 0, tapT = 0;
+    $('#spoils_profile_label').on('click', () => {
+        const now = Date.now(); if (now - tapT > 1500) tap = 0; tapT = now; tap++;
+        if (tap >= 5) {
+            tap = 0;
+            const w = $('#spoils_logwrap');
+            if (w.is(':visible')) w.hide();
+            else { $('#spoils_log').val(logBuf.join('\n') || '(비어있음)'); w.show(); toastr.info('🪵 로그 열림', '', { timeOut: 1500 }); }
+        }
+    });
+    $('#spoils_log_clear').on('click', () => { logBuf.length = 0; $('#spoils_log').val(''); });
     console.log(LOG, '설정 드로어 주입 완료');
 }
 function injectButton() {
