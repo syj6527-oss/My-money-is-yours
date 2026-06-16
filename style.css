@@ -6,6 +6,8 @@
 .popup:has(.spoils-app) .popup_content{ padding:0; margin:0; }
 .popup:has(.spoils-app) .popup-controls{ display:none !important; }
 .popup:has(.spoils-app) .popup-button-close{ display:none !important; }
+.popup:has(.sp-steal-pop) .popup-controls{ display:flex !important; }
+.popup:has(.sp-steal-pop) .popup-button-close{ display:none !important; }
 
 .spoils-app{
   --bg:#FBF8EC; --card:#FFFFFF; --card2:#FFFBF1;

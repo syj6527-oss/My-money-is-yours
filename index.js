@@ -364,14 +364,19 @@ async function ensureJobTakes(cs) {
 async function genSteal(name, amount, workLog) {
     const persona = charState(name).data?.persona || '';
     const voice = recentLinesOf(name, 8);
+    const u = gatherUserCard();
+    const userName = (u && u.name) || '유저';
+    const convo = (gatherChat() || '').slice(-1400);
     const jobs = (workLog || []).map(r => `${r.n}${r.incident ? '(' + r.incident + ')' : ''}`).join(', ');
-    const prompt = `유저가 '${name}'가 알바로 힘들게 번 돈 ${fmtWon(amount)}을 통째로 몰래 가져가려(뽀리려) 한다.
+    const prompt = `유저('${userName}')가 '${name}'가 알바로 힘들게 번 돈 ${fmtWon(amount)}을 통째로 몰래 가져가려(뽀리려) 한다.
 - toil: ${name}가 이 돈을 벌며 얼마나 고생했는지 2~3문장으로. 처량하면서도 데드팬하게, 실제로 한 알바들(${jobs || '온갖 알바'})을 근거로.
-- voice: 돈을 뽀리는 걸 알아챈 순간 ${name}가 내뱉는 한 줄. 체념·분노·허탈 등 캐릭터답게, [말투 예시] 반영.
+- voice: 돈을 뽀리는 걸 알아챈 순간 ${name}가 '${userName}'에게 내뱉는 한 줄 + 상황에 맞는 이모지 1개. ★${name} 본연의 성격과 ${userName}와의 관계에 충실하게. 억지로 화내게 만들지 말 것 — 화내는 타입이면 분노·비아냥, 징징대는 타입이면 마지못해 허락하며 낑낑(예: "필요하면… 가져가. 근데 진짜 너무하다 😢"), 무심하면 체념, 호구면 자기합리화 등. 그 인물이 실제로 보일 반응 그대로.
 반드시 한국어로. JSON 하나만, 코드펜스 없이: { "toil": "...", "voice": "..." }
 [성격] ${persona || '(없음)'}
 [말투 예시 — 최근 대사]
-${voice || '(없음)'}`;
+${voice || '(없음)'}
+[${name} ↔ ${userName} 최근 대화]
+${convo || '(없음)'}`;
     try { return await llmJSON(prompt, 4096); }
     catch (e) { dbg('뽀리기 생성 실패:', e?.message || String(e)); return null; }
 }
