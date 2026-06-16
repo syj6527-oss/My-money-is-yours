@@ -145,8 +145,6 @@
 .spoils-app .sp-rep-foot{display:flex; align-items:center; gap:8px;}
 .spoils-app .sp-rep-foot .sp-stars{flex:1;}
 .spoils-app .sp-stars{font-size:1.02em; color:var(--rosy-deep); letter-spacing:.05em;}
-.spoils-app .sp-pin{flex-shrink:0; cursor:pointer; font-size:.95em; padding:3px 6px; border-radius:8px; background:var(--moss-fill);}
-.spoils-app .sp-pin:hover{background:#DFE9C6;}
 .spoils-app .sp-rep-say{margin-top:6px; font-size:.9em; color:var(--ink-soft); font-style:italic; line-height:1.55;}
 
 /* 하루 보고서 — 칸칸이 일지 */
@@ -198,3 +196,6 @@
 /* 알바 특이사항 */
 .spoils-app .sp-logrow .li-body{flex:1; min-width:0;}
 .spoils-app .sp-logrow .li-inc{font-size:.74em; color:var(--rosy-deep); margin-top:2px; opacity:.9;}
+.spoils-app .sp-logrow .li-before{font-size:.78em; color:var(--moss-deep); font-style:italic; margin-top:3px; line-height:1.45;}
+.spoils-app .sp-cardhead.daytoggle{cursor:pointer;}
+.spoils-app .sp-acc{font-size:.7em; color:var(--ink-soft); margin-left:2px;}

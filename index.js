@@ -120,6 +120,7 @@ function buildPrompt(name, card, chat, lore) {
 - reaction은 유저가 이 인물의 재산을 전부 가져갈 때 인물이 보일 반응을, 그 인물의 말투 그대로 한두 마디 + 상황에 맞는 이모지 1개.
   처지에 맞게: 빈털터리는 절망·매달림("자기야… 나 어떻게 살아 😭"), 부자는 코웃음·무관심, 자존심 강하면 허세 등. 감정적이든 시니컬하든 캐릭터답게.
 - 전체 톤은 그 인물이 실제로 말하듯 자연스럽고 캐주얼하게(딱딱한 보고서체 금지). 말끝은 그 인물이 평소 채팅에서 쓰는 입말체로(긴 문어체·번역투 어미 대신 평소 말투). note·verdict·reaction엔 채팅에 나온 실제 사건·관계·디테일·말버릇을 끌어와 구체적이고 예상 밖이게. 인물(과 유저)의 성격·관계가 자산 구성과 반응에 드러나게. 뻔하지 않게, 웃기게.
+- ★ 가장 중요: verdict·reaction·persona는 아래 [말투 예시]에 드러난 이 인물 고유의 어휘·어미·말버릇·리듬·성격을 그대로 살린다. 일반적인 말투가 아니라 '${name}' 본인의 목소리여야 한다. 1인칭 대사(reaction)는 특히 평소 채팅 말투 그대로.
 - 세계관에 맞는 통화·단위. 대상/채팅과 같은 언어로. 불명확하면 한국어.
 
 [출력] 아래 JSON 객체 하나만. 코드펜스·설명 없이.
@@ -139,6 +140,8 @@ function buildPrompt(name, card, chat, lore) {
 ${card || '(없음)'}
 === 로어북 ===
 ${lore || '(없음)'}
+=== ${name}의 말투 예시 (이 어조를 살릴 것) ===
+${recentLinesOf(name, 10) || '(없음)'}
 === 최근 대화 ===
 ${chat || '(없음)'}`;
 }
@@ -269,25 +272,27 @@ async function genReview(cs, entry) {
     const char = ui.chars.find(x => x.name === ui.sel);
     const persona = cs.data?.persona || '';
     const card = char ? gatherCard(char) : '';
-    const voice = recentLinesOf(ui.sel, 6);
+    const voice = recentLinesOf(ui.sel, 10);
     const prompt = `'${ui.sel}'가 방금 '${entry.n}' 알바(${entry.pay > 0 ? entry.pay + '만원' : '무급'}, 특이사항: ${entry.note}${entry.incident ? ', ' + entry.incident : ''})를 마쳤다. RP 장면처럼 자연스럽게 출력한다.
-- scene: 알바 중이거나 막 끝낸 ${ui.sel}을 그린 2~4문장의 자연스러운 묘사. 소설 한 단락처럼 보여주기(show)와 데드팬으로. 채팅 속 말투·성격·관계를 반영. 설명조·문어체 금지, 실제 장면처럼.
+- before: 이 알바를 '시작하기 전' ${ui.sel}이 속으로 내뱉은 한 줄 평. 그 알바를 만만하게 보거나/꺼리거나/얕본 선입견 위주로, 이 캐릭터 말투로. (예: 대리운전 → "운전 정도야 껌이지", 상하차 → "막노동은 좀…")
+- scene: 알바 중이거나 막 끝낸 ${ui.sel}을 그린 2~4문장의 자연스러운 묘사. 소설 한 단락처럼 보여주기(show)와 데드팬으로. ★before의 선입견과 실제가 어긋나는 '괴리감'을 은근히 드러내면 좋다(만만히 봤는데 빡셌다 / 꺼렸는데 의외로 맞더라 등). 채팅 속 말투·성격 반영, 설명조·문어체 금지.
+- rn: 알바를 끝낸 지금 ${ui.sel}이 속으로 굴리는 생각 한 줄(before와 대비되는 깨달음/투덜거림이면 더 좋다). 담백하게.
 - mood: 이모지 1개 + 짧은 분위기 한 마디 (예: "🥱 영혼 가출 직전").
-- rn: 지금 이 순간 ${ui.sel}이 속으로 굴리는 생각이나 막 하려는 행동 한 줄. 담백하고 캐주얼하게.
 - stars: 이 캐릭터 기준 별점 1~5 정수.
+★ before·rn·scene 모두 [말투 예시]에 드러난 ${ui.sel} 고유의 어휘·어미·말버릇 그대로. 일반적 말투 말고 이 인물 본인의 목소리로.
 [성격] ${persona || '(없음)'}
 [설정] ${card.slice(0, 1500) || '(없음)'}
 [말투 예시 — 이 캐릭터의 최근 대사]
 ${voice || '(없음)'}
 [출력] JSON 하나만, 코드펜스 없이:
-{ "scene": "2~4문장 장면 묘사", "mood": "이모지 + 분위기 한 마디", "rn": "지금 속마음/행동 한 줄", "stars": 정수 }`;
+{ "before": "알바 전 한 줄 평", "scene": "2~4문장 장면 묘사", "mood": "이모지 + 분위기 한 마디", "rn": "끝낸 뒤 속마음 한 줄", "stars": 정수 }`;
     try { return await llmJSON(prompt, 4096); }
     catch (e) { dbg('후기 생성 실패:', e?.message || String(e)); toastr.error('후기 생성 실패. 로그 확인.'); return null; }
 }
 async function genDayReport(name, log) {
     const char = ui.chars.find(x => x.name === name);
     const persona = charState(name).data?.persona || '';
-    const voice = recentLinesOf(name, 6);
+    const voice = recentLinesOf(name, 10);
     const jobs = (log || []).slice().reverse().map(r => `- ${r.n} (${r.pay > 0 ? r.pay + '만원' : '무급'})${r.note ? ' / ' + r.note : ''}${r.incident ? ' / ' + r.incident : ''}`).join('\n');
     const prompt = `'${name}'의 오늘 알바 기록이다. 이걸로 '${name}의 하루'를 일지(log)처럼 만든다.
 [오늘 한 일]
@@ -297,6 +302,7 @@ ${jobs || '(없음)'}
 - timeline: 각 일을 그럴듯한 하루 순서로 배치. 각 항목 { "time": "HH:MM", "job": "알바 이름", "pay": "+N만원 또는 무급", "entry": "그 알바에서 무슨 일이 있었는지 2~3문장의 자연스러운 장면 묘사 (show-don't-tell, 데드팬, 채팅 속 말투·성격·관계 반영)" }. 새벽~밤 사이 시간으로 흩뿌린다.
 - diary: 하루를 돌아보는 일기체 2~4문장. ${name}의 말투로 자연스럽고 데드팬하게.
 - resolve: 내일(혹은 앞으로)에 대한 다짐 한 줄. ${name}답게 (비장하든 시큰둥하든 캐릭터대로).
+- ★ entry·diary·resolve 모두 [말투 예시]에 드러난 ${name} 고유의 어휘·어미·말버릇·성격을 그대로 살린다. 일반적 서술 말고 이 인물의 목소리·시선으로.
 [성격] ${persona || '(없음)'}
 [말투 예시 — 최근 대사]
 ${voice || '(없음)'}
@@ -308,10 +314,11 @@ async function genSpending(name) {
     const base = ui.chars.find(x => x.name === name);
     const persona = charState(name).data?.persona || '';
     const card = base ? gatherCard(base).slice(0, 1200) : '';
-    const voice = recentLinesOf(name, 6);
+    const voice = recentLinesOf(name, 10);
     const prompt = `캐릭터 "${name}"가 오늘 산 것 3~7개를 적는다.
 다양하게 섞는다: 생필품(휴지·두유)부터 사치품, 주식·코인·부동산 같은 큰 지출, 즉흥 감정소비, 계획적인 것까지. 가끔 엉뚱하거나 감정적인 것도(예: "비 맞는 노인에게 우산").
 각 "reason"은 이 캐릭터의 말투 그대로 자연스럽고 캐주얼하게(보고서체·문어체 어미 대신 평소 입말). 채팅 맥락·관계·성격을 반영. 짧고 툭 던지는 것 / 감정적인 것 / 어이없는 것을 섞어 웃기게.
+★ [말투 예시]에 드러난 이 인물 고유의 어휘·어미·말버릇을 그대로 살려라. 일반적인 말투가 아니라 '${name}' 본인의 목소리로.
 [성격] ${persona || '(없음)'}
 [설정] ${card || '(없음)'}
 [말투 예시 — 최근 대사]
@@ -320,18 +327,9 @@ ${voice || '(없음)'}
     try { return await llmJSON(prompt, 4096); }
     catch (e) { dbg('소비 생성 실패:', e?.message || String(e)); toastr.error('소비 생성 실패. 로그 확인.'); return null; }
 }
-function pinToChat(name, text) {
-    const c = ctx();
-    try {
-        const safe = String(text).replace(/[|\n\r]/g, ' ').trim();
-        c.executeSlashCommands(`/sendas name="${String(name).replace(/"/g, '')}" ${safe}`);
-        dbg('채팅 삽입:', name, safe.slice(0, 60));
-        toastr.success('채팅에 반영했어');
-    } catch (e) { dbg('채팅 삽입 실패:', e?.message || String(e)); toastr.error('채팅 삽입 실패. 콘솔/로그 확인.'); }
-}
 
 // ── 렌더 ──
-const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null, compareBusy: false, dayBusy: false };
+const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null, compareBusy: false, dayBusy: false, dayOpen: true };
 
 function assetLine(it, opts = {}) {
     const btn = opts.trash ? `<button class="sp-mini trash" data-act="trash" data-idx="${it._i}">🗑️ 버리기</button>`
@@ -478,16 +476,16 @@ function renderLogRow(r) {
                 detail = `<div class="sp-review">
                   ${rv.scene ? `<div class="sp-rep-scene">${esc(rv.scene)}</div>` : ''}
                   <pre class="sp-rep-block">${block}</pre>
-                  <div class="sp-rep-foot"><span class="sp-stars">${stars}</span><span class="sp-pin" data-act="logpin" data-id="${r.id}" title="채팅에 반영">📌</span></div>
+                  <div class="sp-rep-foot"><span class="sp-stars">${stars}</span></div>
                 </div>`;
             } else {
-                detail = `<div class="sp-review"><div class="sp-rep-foot"><span class="sp-stars">${stars}</span><span class="sp-pin" data-act="logpin" data-id="${r.id}" title="채팅에 반영">📌</span></div><div class="sp-rep-say">“${esc(rv.review || rv.log || '')}”</div></div>`;
+                detail = `<div class="sp-review"><div class="sp-rep-foot"><span class="sp-stars">${stars}</span></div><div class="sp-rep-say">“${esc(rv.review || rv.log || '')}”</div></div>`;
             }
         } else detail = '<div class="sp-review"><div class="sp-loading"><span class="sp-spin"></span> 장면 뽑는 중…</div></div>';
     }
     return `<div class="sp-logrow ${open ? 'open' : ''}" data-act="logopen" data-id="${r.id}">
       <span class="li-ic">${esc(r.ic || '•')}</span>
-      <div class="li-body"><div class="li-n">${esc(r.n)}</div>${r.incident ? `<div class="li-inc">특이사항 · ${esc(r.incident)}</div>` : ''}</div>
+      <div class="li-body"><div class="li-n">${esc(r.n)}</div>${r.incident ? `<div class="li-inc">특이사항 · ${esc(r.incident)}</div>` : ''}${r.review?.before ? `<div class="li-before">“${esc(r.review.before)}”</div>` : ''}</div>
       <span class="li-p ${r.pay > 0 ? '' : 'zero'}">${esc(r.sign)}</span>
       <span class="li-arrow">${open ? '▴' : '▾'}</span></div>${detail}`;
 }
@@ -509,15 +507,17 @@ function renderWork(cs) {
         <div class="sp-cardhead"><span class="sp-ttl">일거리 <span class="sp-budget">${waiting ? '소진' : '굴리기 ' + left + '회 남음'}</span></span>
           <button class="sp-btn ghost sm" data-act="reroll">🎲 새 일거리</button></div>
         <div class="sp-jobs">${jobs}</div></div>
-      ${log.length ? renderDayCard(cs) : ''}
       <div class="sp-card">
         <div class="sp-cardhead"><span class="sp-ttl">알바 기록</span>${log.length ? '<button class="sp-btn ghost sm" data-act="clearlog">🏠 퇴근</button>' : ''}</div>
         ${log.length ? log.map(renderLogRow).join('') : '<div class="empty-hint">아직 한 일이 없습니다. 항목을 누르면 후기가 떠요.</div>'}
-      </div>`;
+      </div>
+      ${log.length ? renderDayCard(cs) : ''}`;
 }
 function renderDayCard(cs) {
     const d = cs.dayReport;
-    const head = `<div class="sp-cardhead"><span class="sp-ttl">📅 ${esc(ui.sel)}의 하루</span><button class="sp-btn ghost sm" data-act="dayreport">${ui.dayBusy ? '정리 중…' : (d ? '다시 정리' : '하루 정리')}</button></div>`;
+    const open = ui.dayOpen !== false;
+    const head = `<div class="sp-cardhead daytoggle" data-act="daytoggle"><span class="sp-ttl">📅 ${esc(ui.sel)}의 하루 <span class="sp-acc">${open ? '▴' : '▾'}</span></span><button class="sp-btn ghost sm" data-act="dayreport">${ui.dayBusy ? '정리 중…' : (d ? '다시 정리' : '하루 정리')}</button></div>`;
+    if (!open) return `<div class="sp-card">${head}</div>`;
     let body;
     if (ui.dayBusy) body = '<div class="sp-loading"><span class="sp-spin"></span> 하루를 되짚는 중…</div>';
     else if (!d) body = '<div class="sp-empty">버튼을 누르면 오늘 한 알바로 하루를 정리해줍니다.</div>';
@@ -528,8 +528,7 @@ function renderDayCard(cs) {
           </div>`).join('');
         const diary = d.diary || d.review || '';
         body = `<div class="sp-days">${tl}</div>
-          ${diary ? `<div class="sp-diary-box"><div class="sp-diary-lbl">📖 오늘 일기</div><div class="sp-diary-txt">${esc(diary)}</div>${d.resolve ? `<div class="sp-resolve">“${esc(d.resolve)}”</div>` : ''}</div>` : ''}
-          <div class="sp-rep-foot"><span class="sp-stars"></span><span class="sp-pin" data-act="daypin" title="채팅에 반영">📌</span></div>`;
+          ${diary ? `<div class="sp-diary-box"><div class="sp-diary-lbl">📖 오늘 일기</div><div class="sp-diary-txt">${esc(diary)}</div>${d.resolve ? `<div class="sp-resolve">“${esc(d.resolve)}”</div>` : ''}</div>` : ''}`;
     }
     return `<div class="sp-card">${head}${body}</div>`;
 }
@@ -646,24 +645,16 @@ async function onAction(e) {
         if (d) { cs.dayReport = { timeline: d.timeline || [], diary: d.diary || '', resolve: d.resolve || '' }; saveState(); }
         render();
     }
-    else if (act === 'daypin') {
-        const d = cs.dayReport; if (!d) return;
-        const txt = [d.diary, d.resolve ? '— ' + d.resolve : ''].filter(Boolean).join(' ');
-        if (txt) pinToChat(ui.sel, txt);
-    }
+    else if (act === 'daytoggle') { ui.dayOpen = !(ui.dayOpen !== false); render(); }
     else if (act === 'logopen') {
         const id = el.dataset.id, entry = (cs.workLog || []).find(x => String(x.id) === String(id)); if (!entry) return;
         if (String(ui.openLog) === String(entry.id)) { ui.openLog = null; render(); return; }
         ui.openLog = entry.id; render();
         if (!entry.review || !entry.review.scene) {
             const rv = await genReview(cs, entry);
-            if (rv) { entry.review = { stars: Math.max(1, Math.min(5, parseInt(rv.stars) || 3)), scene: rv.scene || '', mood: rv.mood || '', rn: rv.rn || '' }; saveState(); }
+            if (rv) { entry.review = { stars: Math.max(1, Math.min(5, parseInt(rv.stars) || 3)), before: rv.before || '', scene: rv.scene || '', mood: rv.mood || '', rn: rv.rn || '' }; saveState(); }
             if (String(ui.openLog) === String(entry.id)) render();
         }
-    }
-    else if (act === 'logpin') {
-        const id = el.dataset.id, entry = (cs.workLog || []).find(x => String(x.id) === String(id));
-        if (entry?.review) pinToChat(ui.sel, entry.review.scene || entry.review.rn || entry.review.review || '');
     }
 }
 function onChange(e) { const el = e.target.closest('[data-act="pickchar"]'); if (el) { ui.sel = el.value; ui.openLog = null; render(); } }
