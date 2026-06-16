@@ -121,7 +121,7 @@ function buildPrompt(name, card, chat, lore) {
   처지에 맞게: 빈털터리는 절망·매달림("자기야… 나 어떻게 살아 😭"), 부자는 코웃음·무관심, 자존심 강하면 허세 등. 감정적이든 시니컬하든 캐릭터답게.
 - 전체 톤은 그 인물이 실제로 말하듯 자연스럽고 캐주얼하게(딱딱한 보고서체 금지). 말끝은 그 인물이 평소 채팅에서 쓰는 입말체로(긴 문어체·번역투 어미 대신 평소 말투). note·verdict·reaction엔 채팅에 나온 실제 사건·관계·디테일·말버릇을 끌어와 구체적이고 예상 밖이게. 인물(과 유저)의 성격·관계가 자산 구성과 반응에 드러나게. 뻔하지 않게, 웃기게.
 - ★ 가장 중요: verdict·reaction·persona는 아래 [말투 예시]에 드러난 이 인물 고유의 어휘·어미·말버릇·리듬·성격을 그대로 살린다. 일반적인 말투가 아니라 '${name}' 본인의 목소리여야 한다. 1인칭 대사(reaction)는 특히 평소 채팅 말투 그대로.
-- 세계관에 맞는 통화·단위. 대상/채팅과 같은 언어로. 불명확하면 한국어.
+- 통화·단위는 세계관에 맞게. 단, 출력 텍스트(note·verdict·persona·reaction·tier 등 설명)는 반드시 한국어로 쓴다. (채팅이 영어여도 한국어로. 고유명사·브랜드명은 그대로 OK)
 
 [출력] 아래 JSON 객체 하나만. 코드펜스·설명 없이.
 {
@@ -270,7 +270,7 @@ const INCIDENTS = [
     '퇴근 도장 찍는 법을 끝내 못 배움',
 ];
 function pickIncident() { return Math.random() < 0.5 ? INCIDENTS[Math.floor(Math.random() * INCIDENTS.length)] : null; }
-function rollPage() { return [...JOB_POOL].sort(() => Math.random() - 0.5).slice(0, 3 + Math.floor(Math.random() * 3)); }
+function rollPage() { return [...JOB_POOL].sort(() => Math.random() - 0.5).slice(0, 3 + Math.floor(Math.random() * 3)).map(j => ({ ...j })); }
 function ensureAlba(cs) {
     if (!cs.alba || (cs.alba.resetAt && Date.now() >= cs.alba.resetAt))
         cs.alba = { budget: 3 + Math.floor(Math.random() * 3), rolls: 0, jobs: rollPage(), resetAt: null };
@@ -290,11 +290,11 @@ async function genReview(cs, entry) {
     const voice = recentLinesOf(ui.sel, 10);
     const prompt = `'${ui.sel}'가 방금 '${entry.n}' 알바(${entry.pay > 0 ? entry.pay + '만원' : '무급'}, 특이사항: ${entry.note}${entry.incident ? ', ' + entry.incident : ''})를 마쳤다. 알바 정보 '후기 페이지'처럼 출력한다 (긴 장면 묘사 X, 간결하게).
 - before: 이 알바를 '시작하기 전' ${ui.sel}이 속으로 내뱉은 한 줄 평. 만만히 보거나/꺼린 선입견 위주, 캐릭터 말투. (예: 대리운전 → "운전이야 껌이지")
-- tasks: 실제로 한 일을 3~5개의 짧고 웃긴 항목으로. '~하기' 같은 간단한 표현. (예: "횟집에서 욕 먹기", "얼음 놓쳐서 또 욕 먹기", "얼굴 반반하다고 홍보인형 되기", "얼음 128개 옮기기")
+- tasks: 실제로 한 일을 짧고 웃긴 항목으로. 갯수는 알바에 맞게 3~7개 사이로 매번 다르게(빡센 알바는 많이, 단순 알바는 적게). '~하기' 같은 간단한 표현. (예: "횟집에서 욕 먹기", "얼음 놓쳐서 또 욕 먹기", "얼굴 반반하다고 홍보인형 되기", "얼음 128개 옮기기")
 - review: 이 알바에 대한 후기 — '다른 예비 알바생'에게 남기는 한두 문장. 할 만한지/추천인지 캐릭터 말투로. before의 선입견과 실제의 괴리감을 녹이면 좋다(만만히 봤는데 빡셌다 / 꺼렸는데 의외로 맞더라).
 - mood(현재 상태): 이모지 1개 + 알바 직후 ${ui.sel}의 상태 한 마디 (예: "🥶 손가락 실종신고 직전").
 - stars: 이 캐릭터 기준 별점 1~5 정수.
-★ before·tasks·review 모두 [말투 예시]에 드러난 ${ui.sel} 고유의 어휘·어미·말버릇 그대로. 일반적 말투 말고 이 인물 본인의 목소리로.
+★ before·tasks·review 모두 [말투 예시]에 드러난 ${ui.sel} 고유의 어휘·어미·말버릇 그대로. 일반적 말투 말고 이 인물 본인의 목소리로. 반드시 한국어로 출력(채팅이 영어여도 한국어로).
 [성격] ${persona || '(없음)'}
 [설정] ${card.slice(0, 1500) || '(없음)'}
 [말투 예시 — 이 캐릭터의 최근 대사]
@@ -314,10 +314,10 @@ async function genDayReport(name, log) {
 ${jobs || '(없음)'}
 
 출력:
-- timeline: 각 일을 그럴듯한 하루 순서로 배치. 각 항목 { "time": "HH:MM", "job": "알바 이름", "pay": "+N만원 또는 무급", "entry": "그 알바에서 무슨 일이 있었는지 2~3문장의 자연스러운 장면 묘사 (show-don't-tell, 데드팬, 채팅 속 말투·성격·관계 반영)" }. 새벽~밤 사이 시간으로 흩뿌린다.
+- timeline: 하루를 시간대별로 채운다. 실제로 한 알바는 모두 포함하되, 그 사이사이에 이동·끼니·휴식·잠깐의 자투리 일·딴짓 같은 현실적인 빈 시간도 섞어 하루답게 만든다. 항목 갯수는 그날 분량에 맞춰 6~10개 안팎으로 매번 다르게(고정 X). 각 항목 { "time": "HH:MM", "job": "알바 이름 또는 그 시간대에 한 일", "pay": "알바면 +N만원, 아니면 빈 문자열", "entry": "그 시간대에 무슨 일이 있었는지 2~3문장 자연스러운 장면 묘사" }. 새벽~밤 순서로.
 - diary: 하루를 돌아보는 일기체 2~4문장. ${name}의 말투로 자연스럽고 데드팬하게.
 - resolve: 내일(혹은 앞으로)에 대한 다짐 한 줄. ${name}답게 (비장하든 시큰둥하든 캐릭터대로).
-- ★ entry·diary·resolve 모두 [말투 예시]에 드러난 ${name} 고유의 어휘·어미·말버릇·성격을 그대로 살린다. 일반적 서술 말고 이 인물의 목소리·시선으로.
+- ★ entry·diary·resolve 모두 [말투 예시]에 드러난 ${name} 고유의 어휘·어미·말버릇·성격을 그대로 살린다. 일반적 서술 말고 이 인물의 목소리·시선으로. 반드시 한국어로 출력(채팅이 영어여도 한국어로).
 [성격] ${persona || '(없음)'}
 [말투 예시 — 최근 대사]
 ${voice || '(없음)'}
@@ -327,26 +327,33 @@ ${voice || '(없음)'}
 }
 async function genJobTakes(name, jobs) {
     const persona = charState(name).data?.persona || '';
-    const voice = recentLinesOf(name, 10);
+    const voice = recentLinesOf(name, 6);
     const list = jobs.map((j, i) => `${i + 1}. ${j.n} (${j.pay > 0 ? j.pay + '만원' : '무급'})`).join('\n');
     const prompt = `'${name}'가 아래 알바 목록을 '하기 전에' 각각에 대해 갖는 짧은 생각/편견/평판을 적는다. 아직 안 해본 상태의 선입견이다.
 각 항목당 한 줄, 아주 짧게(한 문장 이내). 만만히 보거나·꺼리거나·솔깃해하거나 — 캐릭터 성격대로. ${name}의 말투 그대로.
+★ 반드시 한국어로 출력한다. (채팅이 영어여도 한국어로)
 [알바 목록]
 ${list}
 [성격] ${persona || '(없음)'}
 [말투 예시 — 최근 대사]
 ${voice || '(없음)'}
 [출력] JSON 하나만, 코드펜스 없이. 목록 순서대로 같은 개수: { "takes": ["1번 생각", "2번 생각", ...] }`;
-    try { return await llmJSON(prompt, 4096); }
+    try { return await llmJSON(prompt, 2048); }
     catch (e) { dbg('알바 평판 실패:', e?.message || String(e)); return null; }
 }
 async function ensureJobTakes(cs) {
-    const a = cs.alba; if (!a || !a.jobs?.length || a.takes || ui.takesBusy) return;
+    const a = cs.alba; if (!a || !a.jobs?.length || ui.takesBusy) return;
+    if (a.jobs.every(j => j.take !== undefined)) return;
     ui.takesBusy = true;
-    const d = await genJobTakes(ui.sel, a.jobs);
+    const jobsRef = a.jobs, sig = jobsRef.map(j => j.n).join('|');
+    const d = await genJobTakes(ui.sel, jobsRef);
     ui.takesBusy = false;
-    a.takes = (d && Array.isArray(d.takes)) ? d.takes : a.jobs.map(() => '');
-    saveState(); render();
+    if (cs.alba && cs.alba.jobs === jobsRef && cs.alba.jobs.map(j => j.n).join('|') === sig) {
+        const takes = (d && Array.isArray(d.takes)) ? d.takes : [];
+        jobsRef.forEach((j, i) => { j.take = takes[i] || ''; });
+        saveState();
+    }
+    render();
 }
 async function genSpending(name) {
     const base = ui.chars.find(x => x.name === name);
@@ -356,7 +363,7 @@ async function genSpending(name) {
     const prompt = `캐릭터 "${name}"가 오늘 산 것 3~7개를 적는다.
 다양하게 섞는다: 생필품(휴지·두유)부터 사치품, 주식·코인·부동산 같은 큰 지출, 즉흥 감정소비, 계획적인 것까지. 가끔 엉뚱하거나 감정적인 것도(예: "비 맞는 노인에게 우산").
 각 "reason"은 이 캐릭터의 말투 그대로 자연스럽고 캐주얼하게(보고서체·문어체 어미 대신 평소 입말). 채팅 맥락·관계·성격을 반영. 짧고 툭 던지는 것 / 감정적인 것 / 어이없는 것을 섞어 웃기게.
-★ [말투 예시]에 드러난 이 인물 고유의 어휘·어미·말버릇을 그대로 살려라. 일반적인 말투가 아니라 '${name}' 본인의 목소리로.
+★ [말투 예시]에 드러난 이 인물 고유의 어휘·어미·말버릇을 그대로 살려라. 일반적인 말투가 아니라 '${name}' 본인의 목소리로. 반드시 한국어로 출력(채팅이 영어여도 한국어로).
 [성격] ${persona || '(없음)'}
 [설정] ${card || '(없음)'}
 [말투 예시 — 최근 대사]
@@ -533,9 +540,9 @@ function renderWork(cs) {
     if (waiting) jobs = `<div class="sp-wait">전체 페이지 대기 중 — <span class="sp-cdt" data-reset="${a.resetAt}"></span> 후 리셋</div>`;
     else if (!a.jobs.length) jobs = `<div class="sp-empty">남은 일거리가 없습니다. 새 일거리를 굴려보세요.</div>`;
     else jobs = a.jobs.map((j, i) => `<div class="sp-job"><span class="ji">${esc(j.ic)}</span>
-        <div class="jbody"><div class="jn">${esc(j.n)}</div><div class="jp">${j.pay > 0 ? '일당 ' + j.pay + '만원' : '무급'} · ${esc(j.note)}</div>${(a.takes && a.takes[i]) ? `<div class="jtake">“${esc(a.takes[i])}”</div>` : (ui.takesBusy ? '<div class="jtake dim">…</div>' : '')}</div>
+        <div class="jbody"><div class="jn">${esc(j.n)}</div><div class="jp">${j.pay > 0 ? '일당 ' + j.pay + '만원' : '무급'} · ${esc(j.note)}</div>${j.take ? `<div class="jtake">“${esc(j.take)}”</div>` : (ui.takesBusy ? '<div class="jtake dim">…</div>' : '')}</div>
         <button class="sp-btn ghost sm" data-act="work" data-idx="${i}">일하기</button></div>`).join('');
-    if (!waiting && a.jobs.length && !a.takes && !ui.takesBusy) ensureJobTakes(cs);
+    if (!waiting && a.jobs.length && a.jobs.some(j => j.take === undefined) && !ui.takesBusy) ensureJobTakes(cs);
     const log = cs.workLog || [];
     return `<div class="sp-charbar">${charLabel()}</div>
       <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div></div>
@@ -633,7 +640,6 @@ async function onAction(e) {
     else if (act === 'work') {
         const a = ensureAlba(cs), j = a.jobs[+el.dataset.idx]; if (!j) return;
         cs.balance += j.pay * 1e4; a.jobs.splice(+el.dataset.idx, 1);
-        if (a.takes) a.takes.splice(+el.dataset.idx, 1);
         cs.workLog = [{ id: newWorkId(), ic: j.ic, n: j.n, pay: j.pay, note: j.note, incident: pickIncident(), sign: j.pay > 0 ? `+${j.pay}만원` : '±0', review: null }, ...(cs.workLog || [])].slice(0, 20);
         saveState(); render();
     }
@@ -641,7 +647,7 @@ async function onAction(e) {
         const a = ensureAlba(cs);
         if (a.resetAt && Date.now() < a.resetAt) return;
         if (a.rolls >= a.budget) { a.resetAt = Date.now() + COOLDOWN_MS; toastr.info(SNARK[Math.floor(Math.random() * SNARK.length)], '알바지옥'); saveState(); render(); return; }
-        a.rolls += 1; a.jobs = rollPage(); a.takes = null; saveState(); render();
+        a.rolls += 1; a.jobs = rollPage(); saveState(); render();
     }
     else if (act === 'comparequip') {
         const list = appraisedList(); if (list.length < 2) return;
@@ -649,7 +655,7 @@ async function onAction(e) {
         const topC = list[0], botC = list[list.length - 1];
         const tp = charState(topC.name).data?.persona || '';
         const bp = charState(botC.name).data?.persona || '';
-        const prompt = `두 인물의 재산을 데드팬으로 비교하는 한두 줄을 쓴다. 위트있게, 각자 처지가 확 드러나게. 보고서체 금지, 캐주얼하게.
+        const prompt = `두 인물의 재산을 데드팬으로 비교하는 한두 줄을 쓴다. 위트있게, 각자 처지가 확 드러나게. 보고서체 금지, 캐주얼하게. 반드시 한국어로.
 - 부자: "${topC.name}" (${topC.worth}), 성격: ${tp || '(없음)'}
 - 빈자: "${botC.name}" (${botC.worth}), 성격: ${bp || '(없음)'}
 느낌 예: "한 명은 가문 후계자. 한 명은 자전거 체인 빠지면 집에 못 감."
