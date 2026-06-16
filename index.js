@@ -4,6 +4,7 @@
 const LOG = '[전리품]';
 const KEY = 'spoils';
 const COOLDOWN_MS = 30 * 60 * 1000; // 새 일거리 전체 리셋 30분
+const STEAL_MIN = 1000000; // 잔액 100만원 이상이면 뽀리기 가능
 const logBuf = [];
 function dbg(...args) {
     const line = args.map(a => typeof a === 'string' ? a : (() => { try { return JSON.stringify(a); } catch (e) { return String(a); } })()).join(' ');
@@ -70,7 +71,8 @@ function candidateChars() {
 }
 
 // ── 수집 + 감정 ──
-function gatherCard(char) { return [char.name ? `이름: ${char.name}` : '', char.description, char.personality, char.scenario].filter(Boolean).join('\n').slice(0, 5000); }
+function subst(t) { try { return ctx().substituteParams(String(t ?? '')); } catch (e) { return String(t ?? ''); } }
+function gatherCard(char) { return subst([char.name ? `이름: ${char.name}` : '', char.description, char.personality, char.scenario].filter(Boolean).join('\n')).slice(0, 5000); }
 function gatherUserCard() {
     const c = ctx();
     const name = c.name1 || (c.substituteParams ? c.substituteParams('{{user}}') : '') || '유저';
@@ -289,6 +291,7 @@ async function genReview(cs, entry) {
     const card = char ? gatherCard(char) : '';
     const voice = recentLinesOf(ui.sel, 10);
     const prompt = `'${ui.sel}'가 방금 '${entry.n}' 알바(${entry.pay > 0 ? entry.pay + '만원' : '무급'}, 특이사항: ${entry.note}${entry.incident ? ', ' + entry.incident : ''})를 마쳤다. 알바 정보 '후기 페이지'처럼 출력한다 (긴 장면 묘사 X, 간결하게).
+★ 주의: 이 알바를 직접 한 당사자는 '${ui.sel}' 본인이다. {{user}}나 다른 인물이 아니라 '${ui.sel}'이 일하고 돈 번 것이다. before·review는 '${ui.sel}'의 1인칭 시점.
 - before: 이 알바를 '시작하기 전' ${ui.sel}이 속으로 내뱉은 한 줄 평. 만만히 보거나/꺼린 선입견 위주, 캐릭터 말투. (예: 대리운전 → "운전이야 껌이지")
 - tasks: 실제로 한 일을 짧고 웃긴 항목으로. 갯수는 알바에 맞게 3~7개 사이로 매번 다르게(빡센 알바는 많이, 단순 알바는 적게). '~하기' 같은 간단한 표현. (예: "횟집에서 욕 먹기", "얼음 놓쳐서 또 욕 먹기", "얼굴 반반하다고 홍보인형 되기", "얼음 128개 옮기기")
 - review: 이 알바에 대한 후기 — '다른 예비 알바생'에게 남기는 한두 문장. 할 만한지/추천인지 캐릭터 말투로. before의 선입견과 실제의 괴리감을 녹이면 좋다(만만히 봤는데 빡셌다 / 꺼렸는데 의외로 맞더라).
@@ -310,6 +313,7 @@ async function genDayReport(name, log) {
     const voice = recentLinesOf(name, 10);
     const jobs = (log || []).slice().reverse().map(r => `- ${r.n} (${r.pay > 0 ? r.pay + '만원' : '무급'})${r.note ? ' / ' + r.note : ''}${r.incident ? ' / ' + r.incident : ''}`).join('\n');
     const prompt = `'${name}'의 오늘 알바 기록이다. 이걸로 '${name}의 하루'를 일지(log)처럼 만든다.
+★ 주의: 이 하루의 주인공이자 화자는 '${name}' 본인이다. '${name}'이 직접 알바를 뛰어 돈을 벌었다. {{user}}나 다른 인물의 시점이 아니라 '${name}' 본인의 하루이며, diary는 '${name}'의 1인칭 일기다. '${name}'을 누가 돌봐주는 대상처럼 다루지 말 것 — 일한 당사자다.
 [오늘 한 일]
 ${jobs || '(없음)'}
 
@@ -328,16 +332,17 @@ ${voice || '(없음)'}
 async function genJobTakes(name, jobs) {
     const persona = charState(name).data?.persona || '';
     const voice = recentLinesOf(name, 6);
-    const list = jobs.map((j, i) => `${i + 1}. ${j.n} (${j.pay > 0 ? j.pay + '만원' : '무급'})`).join('\n');
-    const prompt = `'${name}'가 아래 알바 목록을 '하기 전에' 각각에 대해 갖는 짧은 생각/편견/평판을 적는다. 아직 안 해본 상태의 선입견이다.
-각 항목당 한 줄, 아주 짧게(한 문장 이내). 만만히 보거나·꺼리거나·솔깃해하거나 — 캐릭터 성격대로. ${name}의 말투 그대로.
-★ 반드시 한국어로 출력한다. (채팅이 영어여도 한국어로)
+    const list = jobs.map((j, i) => `- ${j.n} (${j.pay > 0 ? j.pay + '만원' : '무급'})`).join('\n');
+    const prompt = `'${name}' 본인이 아래 알바들을 '직접 할지 말지' 보면서 드는 짧은 생각/편견/평판을 적는다. (이 알바를 뛸 사람은 '${name}' 본인이다.)
+각 알바당 한 줄, 아주 짧게(한 문장 이내). 만만히 보거나·꺼리거나·솔깃해하거나 — 캐릭터 성격대로. ${name}의 말투 그대로. 반드시 한국어로.
+★ take는 반드시 그 알바의 내용과 직접 맞아야 한다(엉뚱한 알바 얘기 금지). 목록의 모든 알바를 포함.
 [알바 목록]
 ${list}
 [성격] ${persona || '(없음)'}
 [말투 예시 — 최근 대사]
 ${voice || '(없음)'}
-[출력] JSON 하나만, 코드펜스 없이. 목록 순서대로 같은 개수: { "takes": ["1번 생각", "2번 생각", ...] }`;
+[출력] JSON 하나만, 코드펜스 없이. 알바 이름을 그대로 적어 매칭한다:
+{ "takes": [ { "job": "알바 이름(위 목록 그대로)", "take": "그 알바에 대한 한 줄 생각" } ] }`;
     try { return await llmJSON(prompt, 2048); }
     catch (e) { dbg('알바 평판 실패:', e?.message || String(e)); return null; }
 }
@@ -349,11 +354,37 @@ async function ensureJobTakes(cs) {
     const d = await genJobTakes(ui.sel, jobsRef);
     ui.takesBusy = false;
     if (cs.alba && cs.alba.jobs === jobsRef && cs.alba.jobs.map(j => j.n).join('|') === sig) {
-        const takes = (d && Array.isArray(d.takes)) ? d.takes : [];
-        jobsRef.forEach((j, i) => { j.take = takes[i] || ''; });
+        const map = {};
+        ((d && Array.isArray(d.takes)) ? d.takes : []).forEach(t => { if (t && t.job) map[String(t.job).trim()] = t.take || ''; });
+        jobsRef.forEach(j => { j.take = (map[j.n] != null) ? map[j.n] : ''; });
         saveState();
     }
     render();
+}
+async function genSteal(name, amount, workLog) {
+    const persona = charState(name).data?.persona || '';
+    const voice = recentLinesOf(name, 8);
+    const jobs = (workLog || []).map(r => `${r.n}${r.incident ? '(' + r.incident + ')' : ''}`).join(', ');
+    const prompt = `유저가 '${name}'가 알바로 힘들게 번 돈 ${fmtWon(amount)}을 통째로 몰래 가져가려(뽀리려) 한다.
+- toil: ${name}가 이 돈을 벌며 얼마나 고생했는지 2~3문장으로. 처량하면서도 데드팬하게, 실제로 한 알바들(${jobs || '온갖 알바'})을 근거로.
+- voice: 돈을 뽀리는 걸 알아챈 순간 ${name}가 내뱉는 한 줄. 체념·분노·허탈 등 캐릭터답게, [말투 예시] 반영.
+반드시 한국어로. JSON 하나만, 코드펜스 없이: { "toil": "...", "voice": "..." }
+[성격] ${persona || '(없음)'}
+[말투 예시 — 최근 대사]
+${voice || '(없음)'}`;
+    try { return await llmJSON(prompt, 4096); }
+    catch (e) { dbg('뽀리기 생성 실패:', e?.message || String(e)); return null; }
+}
+function showStealPopup(name, amount, d) {
+    const c = ctx();
+    const el = document.createElement('div');
+    el.className = 'spoils-app sp-steal-pop';
+    el.innerHTML = `<div class="sp-steal-amt">💸 ${esc(fmtWon(amount))}</div>
+      <div class="sp-steal-sub">${esc(name)}의 알바비를 뽀렸습니다.</div>
+      ${d?.toil ? `<div class="sp-steal-toil">${esc(d.toil)}</div>` : ''}
+      ${d?.voice ? `<div class="sp-steal-voice">“${esc(d.voice)}”<span class="who">— ${esc(name)}</span></div>` : ''}`;
+    try { new c.Popup(el, c.POPUP_TYPE.TEXT, '', { wide: true, okButton: '...미안' }).show(); }
+    catch (e) { dbg('뽀리기 팝업 실패:', e?.message || String(e)); toastr.success(`${name}의 ${fmtWon(amount)} 뽀림`); }
 }
 async function genSpending(name) {
     const base = ui.chars.find(x => x.name === name);
@@ -361,6 +392,7 @@ async function genSpending(name) {
     const card = base ? gatherCard(base).slice(0, 1200) : '';
     const voice = recentLinesOf(name, 10);
     const prompt = `캐릭터 "${name}"가 오늘 산 것 3~7개를 적는다.
+★ 주의: 돈을 쓴 당사자는 '${name}' 본인이다. {{user}}나 다른 인물이 아니라 '${name}'이 산 것이다.
 다양하게 섞는다: 생필품(휴지·두유)부터 사치품, 주식·코인·부동산 같은 큰 지출, 즉흥 감정소비, 계획적인 것까지. 가끔 엉뚱하거나 감정적인 것도(예: "비 맞는 노인에게 우산").
 각 "reason"은 이 캐릭터의 말투 그대로 자연스럽고 캐주얼하게(보고서체·문어체 어미 대신 평소 입말). 채팅 맥락·관계·성격을 반영. 짧고 툭 던지는 것 / 감정적인 것 / 어이없는 것을 섞어 웃기게.
 ★ [말투 예시]에 드러난 이 인물 고유의 어휘·어미·말버릇을 그대로 살려라. 일반적인 말투가 아니라 '${name}' 본인의 목소리로. 반드시 한국어로 출력(채팅이 영어여도 한국어로).
@@ -374,7 +406,7 @@ ${voice || '(없음)'}
 }
 
 // ── 렌더 ──
-const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null, compareBusy: false, dayBusy: false, dayOpen: true, takesBusy: false };
+const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null, compareBusy: false, dayBusy: false, dayOpen: true, takesBusy: false, stealBusy: false };
 
 function assetLine(it, opts = {}) {
     const btn = opts.trash ? `<button class="sp-mini trash" data-act="trash" data-idx="${it._i}">🗑️ 버리기</button>`
@@ -545,7 +577,7 @@ function renderWork(cs) {
     if (!waiting && a.jobs.length && a.jobs.some(j => j.take === undefined) && !ui.takesBusy) ensureJobTakes(cs);
     const log = cs.workLog || [];
     return `<div class="sp-charbar">${charLabel()}</div>
-      <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div></div>
+      <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div>${cs.balance >= STEAL_MIN ? `<button class="sp-steal-btn" data-act="steal">${ui.stealBusy ? '뽀리는 중…' : '💸 뽀리기'}</button>` : ''}</div>
       <div class="sp-card">
         <div class="sp-cardhead"><span class="sp-ttl">일거리 <span class="sp-budget">${waiting ? '소진' : '굴리기 ' + left + '회 남음'}</span></span>
           <button class="sp-btn ghost sm" data-act="reroll">🎲 새 일거리</button></div>
@@ -687,6 +719,18 @@ async function onAction(e) {
         ui.dayBusy = false;
         if (d) { cs.dayReport = { timeline: d.timeline || [], diary: d.diary || '', resolve: d.resolve || '' }; saveState(); }
         render();
+    }
+    else if (act === 'steal') {
+        if (cs.balance < STEAL_MIN || ui.stealBusy) return;
+        if (!confirm(`정말로… ${ui.sel}가 뼈 빠지게 번 ${fmtWon(cs.balance)}을 뽀릴 거야? 😢`)) return;
+        const amount = cs.balance;
+        ui.stealBusy = true; render();
+        const d = await genSteal(ui.sel, amount, cs.workLog);
+        ui.stealBusy = false;
+        st.vault.push({ category: '현금', icon: '💸', name: `${ui.sel}의 알바비 (뽀림)`, value: `${amount.toLocaleString()}원`, from: ui.sel });
+        cs.balance = 0;
+        saveState(); render();
+        showStealPopup(ui.sel, amount, d);
     }
     else if (act === 'daytoggle') { ui.dayOpen = !(ui.dayOpen !== false); render(); }
     else if (act === 'logopen') {
