@@ -577,7 +577,7 @@ function renderWork(cs) {
     if (!waiting && a.jobs.length && a.jobs.some(j => j.take === undefined) && !ui.takesBusy) ensureJobTakes(cs);
     const log = cs.workLog || [];
     return `<div class="sp-charbar">${charLabel()}</div>
-      <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div>${cs.balance >= STEAL_MIN ? `<button class="sp-steal-btn" data-act="steal">${ui.stealBusy ? '뽀리는 중…' : '💸 뽀리기'}</button>` : ''}</div>
+      <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div>${Math.round((cs.balance || 0) / 1e4) * 1e4 >= STEAL_MIN ? `<button class="sp-steal-btn" data-act="steal">${ui.stealBusy ? '뽀리는 중…' : '💸 뽀리기'}</button>` : ''}</div>
       <div class="sp-card">
         <div class="sp-cardhead"><span class="sp-ttl">일거리 <span class="sp-budget">${waiting ? '소진' : '굴리기 ' + left + '회 남음'}</span></span>
           <button class="sp-btn ghost sm" data-act="reroll">🎲 새 일거리</button></div>
@@ -721,7 +721,7 @@ async function onAction(e) {
         render();
     }
     else if (act === 'steal') {
-        if (cs.balance < STEAL_MIN || ui.stealBusy) return;
+        if (Math.round((cs.balance || 0) / 1e4) * 1e4 < STEAL_MIN || ui.stealBusy) return;
         if (!confirm(`정말로… ${ui.sel}가 뼈 빠지게 번 ${fmtWon(cs.balance)}을 뽀릴 거야? 😢`)) return;
         const amount = cs.balance;
         ui.stealBusy = true; render();
