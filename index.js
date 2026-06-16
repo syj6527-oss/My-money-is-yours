@@ -226,6 +226,21 @@ const JOB_POOL = [
     { ic: '🎅', n: '시즌 한정 산타', pay: 6, note: '무릎에 애들 12명' },
     { ic: '🛒', n: '마트 카트 정리', pay: 3, note: '주차장이 곧 헬스장' },
     { ic: '🎤', n: '행사 MC 보조', pay: 5, note: '대본에 없는 애드립 강요' },
+    { ic: '🦀', n: '알래스카 크랩보트', pay: 25, note: '파도가 동료를 노림' },
+    { ic: '🐪', n: '두바이 낙타 몰이', pay: 12, note: '낙타가 침을 조준함' },
+    { ic: '🍇', n: '프랑스 포도밭 수확', pay: 9, note: '허리는 굽고 와인은 못 마심' },
+    { ic: '🐧', n: '남극 기지 보급', pay: 30, note: '펭귄이 텃세 부림' },
+    { ic: '🐑', n: '호주 양털 깎기', pay: 11, note: '양이 더 빨리 뜀' },
+    { ic: '🌋', n: '화산 관측소 보조', pay: 14, note: '대피로 암기 필수' },
+    { ic: '🦘', n: '아웃백 농장 일손', pay: 10, note: '캥거루가 동료 행세' },
+    { ic: '🎰', n: '카지노 칩 정리', pay: 8, note: '표정 관리가 9할' },
+    { ic: '🐝', n: '양봉장 벌집 채집', pay: 7, note: '평정심이 곧 생존' },
+    { ic: '🧗', n: '빌딩 외벽 청소', pay: 13, note: '아래는 보지 않기' },
+    { ic: '🍤', n: '일본 어시장 경매', pay: 9, note: '손짓 잘못하면 참치 낙찰' },
+    { ic: '🪦', n: '공동묘지 야간 관리', pay: 8, note: '뒤는 돌아보지 않음' },
+    { ic: '🎢', n: '해외 테마파크 인형탈', pay: 6, note: '탈 안은 사우나' },
+    { ic: '🐙', n: '문어잡이 배 갑판', pay: 12, note: '미끄러우면 같이 끌려감' },
+    { ic: '🧀', n: '치즈 동굴 숙성 관리', pay: 7, note: '냄새가 옷에 빙의' },
 ];
 const SNARK = ['일이 그렇게 안 급한가 봐?', '골라잡을 처지는 아닐 텐데.', '오늘 치 일감은 동났어. 내일 다시 오든가.'];
 const INCIDENTS = [
@@ -277,7 +292,7 @@ async function genReview(cs, entry) {
 - before: 이 알바를 '시작하기 전' ${ui.sel}이 속으로 내뱉은 한 줄 평. 만만히 보거나/꺼린 선입견 위주, 캐릭터 말투. (예: 대리운전 → "운전이야 껌이지")
 - tasks: 실제로 한 일을 3~5개의 짧고 웃긴 항목으로. '~하기' 같은 간단한 표현. (예: "횟집에서 욕 먹기", "얼음 놓쳐서 또 욕 먹기", "얼굴 반반하다고 홍보인형 되기", "얼음 128개 옮기기")
 - review: 이 알바에 대한 후기 — '다른 예비 알바생'에게 남기는 한두 문장. 할 만한지/추천인지 캐릭터 말투로. before의 선입견과 실제의 괴리감을 녹이면 좋다(만만히 봤는데 빡셌다 / 꺼렸는데 의외로 맞더라).
-- mood: 이모지 1개 + 짧은 분위기 한 마디.
+- mood(현재 상태): 이모지 1개 + 알바 직후 ${ui.sel}의 상태 한 마디 (예: "🥶 손가락 실종신고 직전").
 - stars: 이 캐릭터 기준 별점 1~5 정수.
 ★ before·tasks·review 모두 [말투 예시]에 드러난 ${ui.sel} 고유의 어휘·어미·말버릇 그대로. 일반적 말투 말고 이 인물 본인의 목소리로.
 [성격] ${persona || '(없음)'}
@@ -310,6 +325,29 @@ ${voice || '(없음)'}
     try { return await llmJSON(prompt, 4096); }
     catch (e) { dbg('하루 보고서 실패:', e?.message || String(e)); toastr.error('하루 보고서 실패. 로그 확인.'); return null; }
 }
+async function genJobTakes(name, jobs) {
+    const persona = charState(name).data?.persona || '';
+    const voice = recentLinesOf(name, 10);
+    const list = jobs.map((j, i) => `${i + 1}. ${j.n} (${j.pay > 0 ? j.pay + '만원' : '무급'})`).join('\n');
+    const prompt = `'${name}'가 아래 알바 목록을 '하기 전에' 각각에 대해 갖는 짧은 생각/편견/평판을 적는다. 아직 안 해본 상태의 선입견이다.
+각 항목당 한 줄, 아주 짧게(한 문장 이내). 만만히 보거나·꺼리거나·솔깃해하거나 — 캐릭터 성격대로. ${name}의 말투 그대로.
+[알바 목록]
+${list}
+[성격] ${persona || '(없음)'}
+[말투 예시 — 최근 대사]
+${voice || '(없음)'}
+[출력] JSON 하나만, 코드펜스 없이. 목록 순서대로 같은 개수: { "takes": ["1번 생각", "2번 생각", ...] }`;
+    try { return await llmJSON(prompt, 4096); }
+    catch (e) { dbg('알바 평판 실패:', e?.message || String(e)); return null; }
+}
+async function ensureJobTakes(cs) {
+    const a = cs.alba; if (!a || !a.jobs?.length || a.takes || ui.takesBusy) return;
+    ui.takesBusy = true;
+    const d = await genJobTakes(ui.sel, a.jobs);
+    ui.takesBusy = false;
+    a.takes = (d && Array.isArray(d.takes)) ? d.takes : a.jobs.map(() => '');
+    saveState(); render();
+}
 async function genSpending(name) {
     const base = ui.chars.find(x => x.name === name);
     const persona = charState(name).data?.persona || '';
@@ -329,7 +367,7 @@ ${voice || '(없음)'}
 }
 
 // ── 렌더 ──
-const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null, compareBusy: false, dayBusy: false, dayOpen: true };
+const ui = { tab: 'appraise', sel: null, $box: null, chars: [], popup: null, openLog: null, spendBusy: null, compareBusy: false, dayBusy: false, dayOpen: true, takesBusy: false };
 
 function assetLine(it, opts = {}) {
     const btn = opts.trash ? `<button class="sp-mini trash" data-act="trash" data-idx="${it._i}">🗑️ 버리기</button>`
@@ -469,7 +507,7 @@ function renderLogRow(r) {
                 `근무      ${esc(r.n)}`,
                 `수입      ${r.pay > 0 ? '+' + r.pay + '만원' : '±0'}`,
                 `특이사항    ${esc(r.note || '')}${r.incident ? ' · ' + esc(r.incident) : ''}`,
-                `Mood     ${esc(rv.mood || '')}`
+                `상태      ${esc(rv.mood || '')}`
             ].join('\n');
             const tasks = (rv.tasks || []).map(t => `<li>${esc(t)}</li>`).join('');
             detail = `<div class="sp-review">
@@ -495,8 +533,9 @@ function renderWork(cs) {
     if (waiting) jobs = `<div class="sp-wait">전체 페이지 대기 중 — <span class="sp-cdt" data-reset="${a.resetAt}"></span> 후 리셋</div>`;
     else if (!a.jobs.length) jobs = `<div class="sp-empty">남은 일거리가 없습니다. 새 일거리를 굴려보세요.</div>`;
     else jobs = a.jobs.map((j, i) => `<div class="sp-job"><span class="ji">${esc(j.ic)}</span>
-        <div class="jbody"><div class="jn">${esc(j.n)}</div><div class="jp">${j.pay > 0 ? '일당 ' + j.pay + '만원' : '무급'} · ${esc(j.note)}</div></div>
+        <div class="jbody"><div class="jn">${esc(j.n)}</div><div class="jp">${j.pay > 0 ? '일당 ' + j.pay + '만원' : '무급'} · ${esc(j.note)}</div>${(a.takes && a.takes[i]) ? `<div class="jtake">“${esc(a.takes[i])}”</div>` : (ui.takesBusy ? '<div class="jtake dim">…</div>' : '')}</div>
         <button class="sp-btn ghost sm" data-act="work" data-idx="${i}">일하기</button></div>`).join('');
+    if (!waiting && a.jobs.length && !a.takes && !ui.takesBusy) ensureJobTakes(cs);
     const log = cs.workLog || [];
     return `<div class="sp-charbar">${charLabel()}</div>
       <div class="sp-balance"><div class="lbl">${esc(ui.sel)} 잔액</div><div class="amt">${fmtWon(cs.balance)}</div></div>
@@ -594,6 +633,7 @@ async function onAction(e) {
     else if (act === 'work') {
         const a = ensureAlba(cs), j = a.jobs[+el.dataset.idx]; if (!j) return;
         cs.balance += j.pay * 1e4; a.jobs.splice(+el.dataset.idx, 1);
+        if (a.takes) a.takes.splice(+el.dataset.idx, 1);
         cs.workLog = [{ id: newWorkId(), ic: j.ic, n: j.n, pay: j.pay, note: j.note, incident: pickIncident(), sign: j.pay > 0 ? `+${j.pay}만원` : '±0', review: null }, ...(cs.workLog || [])].slice(0, 20);
         saveState(); render();
     }
@@ -601,7 +641,7 @@ async function onAction(e) {
         const a = ensureAlba(cs);
         if (a.resetAt && Date.now() < a.resetAt) return;
         if (a.rolls >= a.budget) { a.resetAt = Date.now() + COOLDOWN_MS; toastr.info(SNARK[Math.floor(Math.random() * SNARK.length)], '알바지옥'); saveState(); render(); return; }
-        a.rolls += 1; a.jobs = rollPage(); saveState(); render();
+        a.rolls += 1; a.jobs = rollPage(); a.takes = null; saveState(); render();
     }
     else if (act === 'comparequip') {
         const list = appraisedList(); if (list.length < 2) return;

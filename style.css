@@ -128,6 +128,8 @@
 .spoils-app .sp-job .jbody{flex:1; min-width:0;}
 .spoils-app .sp-job .jn{font-weight:600;}
 .spoils-app .sp-job .jp{font-size:.78em; color:var(--ink-soft);}
+.spoils-app .sp-job .jtake{font-size:.8em; color:var(--moss-deep); font-style:italic; line-height:1.45; margin-top:3px;}
+.spoils-app .sp-job .jtake.dim{color:var(--ink-soft); opacity:.6;}
 .spoils-app .sp-wait{text-align:center; padding:18px 8px; color:var(--rosy-deep); font-style:italic;}
 .spoils-app .sp-cdt{font-family:var(--mono); font-style:normal; font-weight:700;}
 
