@@ -139,12 +139,30 @@
 .spoils-app .sp-logrow .li-p{font-family:var(--mono); color:var(--moss-deep); font-weight:700; font-size:.9em;}
 .spoils-app .sp-logrow .li-p.zero{color:var(--ink-soft);}
 .spoils-app .sp-logrow .li-arrow{color:var(--ink-soft); font-size:.8em;}
-.spoils-app .sp-review{background:var(--card2); border-radius:0 0 12px 12px; padding:10px 12px 13px; margin-bottom:6px; border-bottom:1px solid var(--line);}
-.spoils-app .sp-stars{font-size:1.05em; color:var(--rosy-deep); letter-spacing:.05em; display:flex; align-items:center; justify-content:space-between;}
-.spoils-app .sp-pin{cursor:pointer; font-size:.95em; padding:3px 6px; border-radius:8px; background:var(--moss-fill);}
+.spoils-app .sp-review{background:var(--card2); border-radius:0 0 12px 12px; padding:12px 13px 13px; margin-bottom:6px; border-bottom:1px solid var(--line);}
+.spoils-app .sp-rep-scene{font-size:.9em; line-height:1.7; color:var(--ink); margin-bottom:11px; white-space:pre-wrap;}
+.spoils-app .sp-rep-block{font-family:var(--mono); font-size:.74em; line-height:1.75; color:var(--ink-soft); background:var(--beige); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:0 0 9px; white-space:pre-wrap; overflow-wrap:anywhere;}
+.spoils-app .sp-rep-foot{display:flex; align-items:center; gap:8px;}
+.spoils-app .sp-rep-foot .sp-stars{flex:1;}
+.spoils-app .sp-stars{font-size:1.02em; color:var(--rosy-deep); letter-spacing:.05em;}
+.spoils-app .sp-pin{flex-shrink:0; cursor:pointer; font-size:.95em; padding:3px 6px; border-radius:8px; background:var(--moss-fill);}
 .spoils-app .sp-pin:hover{background:#DFE9C6;}
-.spoils-app .sp-diary{margin-top:8px; font-size:.85em; color:var(--ink); line-height:1.5;}
-.spoils-app .sp-rev{margin-top:6px; font-size:.85em; color:var(--ink-soft); font-style:italic; line-height:1.5;}
+.spoils-app .sp-rep-say{margin-top:6px; font-size:.9em; color:var(--ink-soft); font-style:italic; line-height:1.55;}
+
+/* 하루 보고서 — 칸칸이 일지 */
+.spoils-app .sp-days{display:flex; flex-direction:column; gap:9px; margin:4px 0 12px;}
+.spoils-app .sp-day-entry{background:var(--beige); border:1px solid var(--line); border-left:3px solid var(--moss); border-radius:10px; padding:10px 12px;}
+.spoils-app .sp-day-hd{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:5px;}
+.spoils-app .sp-day-hd .dh-t{font-family:var(--mono); font-size:.82em; font-weight:700; color:var(--rosy-deep); background:var(--rosy-fill); padding:1px 7px; border-radius:999px;}
+.spoils-app .sp-day-hd .dh-j{font-weight:700; flex:1; min-width:0;}
+.spoils-app .sp-day-hd .dh-p{font-family:var(--mono); font-size:.8em; color:var(--mid);}
+.spoils-app .sp-day-body{font-size:.88em; line-height:1.65; color:var(--ink); white-space:pre-wrap;}
+
+/* 오늘 일기 + 다짐 */
+.spoils-app .sp-diary-box{background:var(--card2); border:1px dashed var(--rosy); border-radius:12px; padding:12px 14px; margin-bottom:9px;}
+.spoils-app .sp-diary-lbl{font-size:.72em; font-weight:800; letter-spacing:.05em; color:var(--rosy-deep); margin-bottom:7px;}
+.spoils-app .sp-diary-txt{font-size:.9em; line-height:1.7; color:var(--ink); white-space:pre-wrap;}
+.spoils-app .sp-resolve{margin-top:9px; padding-top:8px; border-top:1px dashed rgba(216,154,142,.45); font-style:italic; font-size:.92em; color:var(--moss-deep); line-height:1.55;}
 .spoils-app .empty-hint{color:var(--ink-soft); font-style:italic; text-align:center; padding:8px;}
 
 /* 로딩 스피너 */
