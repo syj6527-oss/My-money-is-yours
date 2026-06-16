@@ -141,7 +141,13 @@
 .spoils-app .sp-logrow .li-arrow{color:var(--ink-soft); font-size:.8em;}
 .spoils-app .sp-review{background:var(--card2); border-radius:0 0 12px 12px; padding:12px 13px 13px; margin-bottom:6px; border-bottom:1px solid var(--line);}
 .spoils-app .sp-rep-scene{font-size:.9em; line-height:1.7; color:var(--ink); margin-bottom:11px; white-space:pre-wrap;}
-.spoils-app .sp-rep-block{font-family:var(--mono); font-size:.74em; line-height:1.75; color:var(--ink-soft); background:var(--beige); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:0 0 9px; white-space:pre-wrap; overflow-wrap:anywhere;}
+.spoils-app .sp-rep-block{font-family:var(--mono); font-size:.74em; line-height:1.75; color:var(--ink-soft); background:var(--beige); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:0 0 10px; white-space:pre-wrap; overflow-wrap:anywhere;}
+.spoils-app .sp-tasks-lbl{font-size:.72em; font-weight:800; letter-spacing:.04em; color:var(--rosy-deep); margin:0 0 5px 2px;}
+.spoils-app .sp-tasks{list-style:none; margin:0 0 11px; padding:0;}
+.spoils-app .sp-tasks li{position:relative; padding:3px 0 3px 16px; font-size:.88em; line-height:1.5; color:var(--ink);}
+.spoils-app .sp-tasks li::before{content:"›"; position:absolute; left:3px; color:var(--moss); font-weight:700;}
+.spoils-app .sp-jobrev{font-size:.9em; line-height:1.6; color:var(--ink); background:var(--card2); border-left:3px solid var(--rosy); border-radius:0 10px 10px 0; padding:9px 12px; margin-bottom:9px;}
+.spoils-app .sp-jobrev .jr-lbl{display:inline-block; font-size:.7em; font-weight:800; letter-spacing:.04em; color:var(--rosy-deep); margin-right:5px; vertical-align:1px;}
 .spoils-app .sp-rep-foot{display:flex; align-items:center; gap:8px;}
 .spoils-app .sp-rep-foot .sp-stars{flex:1;}
 .spoils-app .sp-stars{font-size:1.02em; color:var(--rosy-deep); letter-spacing:.05em;}

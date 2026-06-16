@@ -273,19 +273,19 @@ async function genReview(cs, entry) {
     const persona = cs.data?.persona || '';
     const card = char ? gatherCard(char) : '';
     const voice = recentLinesOf(ui.sel, 10);
-    const prompt = `'${ui.sel}'가 방금 '${entry.n}' 알바(${entry.pay > 0 ? entry.pay + '만원' : '무급'}, 특이사항: ${entry.note}${entry.incident ? ', ' + entry.incident : ''})를 마쳤다. RP 장면처럼 자연스럽게 출력한다.
-- before: 이 알바를 '시작하기 전' ${ui.sel}이 속으로 내뱉은 한 줄 평. 그 알바를 만만하게 보거나/꺼리거나/얕본 선입견 위주로, 이 캐릭터 말투로. (예: 대리운전 → "운전 정도야 껌이지", 상하차 → "막노동은 좀…")
-- scene: 알바 중이거나 막 끝낸 ${ui.sel}을 그린 2~4문장의 자연스러운 묘사. 소설 한 단락처럼 보여주기(show)와 데드팬으로. ★before의 선입견과 실제가 어긋나는 '괴리감'을 은근히 드러내면 좋다(만만히 봤는데 빡셌다 / 꺼렸는데 의외로 맞더라 등). 채팅 속 말투·성격 반영, 설명조·문어체 금지.
-- rn: 알바를 끝낸 지금 ${ui.sel}이 속으로 굴리는 생각 한 줄(before와 대비되는 깨달음/투덜거림이면 더 좋다). 담백하게.
-- mood: 이모지 1개 + 짧은 분위기 한 마디 (예: "🥱 영혼 가출 직전").
+    const prompt = `'${ui.sel}'가 방금 '${entry.n}' 알바(${entry.pay > 0 ? entry.pay + '만원' : '무급'}, 특이사항: ${entry.note}${entry.incident ? ', ' + entry.incident : ''})를 마쳤다. 알바 정보 '후기 페이지'처럼 출력한다 (긴 장면 묘사 X, 간결하게).
+- before: 이 알바를 '시작하기 전' ${ui.sel}이 속으로 내뱉은 한 줄 평. 만만히 보거나/꺼린 선입견 위주, 캐릭터 말투. (예: 대리운전 → "운전이야 껌이지")
+- tasks: 실제로 한 일을 3~5개의 짧고 웃긴 항목으로. '~하기' 같은 간단한 표현. (예: "횟집에서 욕 먹기", "얼음 놓쳐서 또 욕 먹기", "얼굴 반반하다고 홍보인형 되기", "얼음 128개 옮기기")
+- review: 이 알바에 대한 후기 — '다른 예비 알바생'에게 남기는 한두 문장. 할 만한지/추천인지 캐릭터 말투로. before의 선입견과 실제의 괴리감을 녹이면 좋다(만만히 봤는데 빡셌다 / 꺼렸는데 의외로 맞더라).
+- mood: 이모지 1개 + 짧은 분위기 한 마디.
 - stars: 이 캐릭터 기준 별점 1~5 정수.
-★ before·rn·scene 모두 [말투 예시]에 드러난 ${ui.sel} 고유의 어휘·어미·말버릇 그대로. 일반적 말투 말고 이 인물 본인의 목소리로.
+★ before·tasks·review 모두 [말투 예시]에 드러난 ${ui.sel} 고유의 어휘·어미·말버릇 그대로. 일반적 말투 말고 이 인물 본인의 목소리로.
 [성격] ${persona || '(없음)'}
 [설정] ${card.slice(0, 1500) || '(없음)'}
 [말투 예시 — 이 캐릭터의 최근 대사]
 ${voice || '(없음)'}
 [출력] JSON 하나만, 코드펜스 없이:
-{ "before": "알바 전 한 줄 평", "scene": "2~4문장 장면 묘사", "mood": "이모지 + 분위기 한 마디", "rn": "끝낸 뒤 속마음 한 줄", "stars": 정수 }`;
+{ "before": "알바 전 한 줄 평", "tasks": ["한 일 3~5개"], "review": "다른 알바생 위한 후기 한두 문장", "mood": "이모지 + 분위기 한 마디", "stars": 정수 }`;
     try { return await llmJSON(prompt, 4096); }
     catch (e) { dbg('후기 생성 실패:', e?.message || String(e)); toastr.error('후기 생성 실패. 로그 확인.'); return null; }
 }
@@ -465,23 +465,20 @@ function renderLogRow(r) {
             const rv = r.review;
             const stn = Math.max(0, Math.min(5, rv.stars | 0));
             const stars = '★'.repeat(stn) + '☆'.repeat(5 - stn);
-            if (rv.scene || rv.mood || rv.rn) {
-                const block = [
-                    `근무      ${esc(r.n)}`,
-                    `수입      ${r.pay > 0 ? '+' + r.pay + '만원' : '±0'}`,
-                    `특이사항    ${esc(r.note || '')}${r.incident ? ' · ' + esc(r.incident) : ''}`,
-                    `Mood     ${esc(rv.mood || '')}`,
-                    `📋 ${esc(ui.sel)} rn: ${esc(rv.rn || '')}`
-                ].join('\n');
-                detail = `<div class="sp-review">
-                  ${rv.scene ? `<div class="sp-rep-scene">${esc(rv.scene)}</div>` : ''}
-                  <pre class="sp-rep-block">${block}</pre>
-                  <div class="sp-rep-foot"><span class="sp-stars">${stars}</span></div>
-                </div>`;
-            } else {
-                detail = `<div class="sp-review"><div class="sp-rep-foot"><span class="sp-stars">${stars}</span></div><div class="sp-rep-say">“${esc(rv.review || rv.log || '')}”</div></div>`;
-            }
-        } else detail = '<div class="sp-review"><div class="sp-loading"><span class="sp-spin"></span> 장면 뽑는 중…</div></div>';
+            const block = [
+                `근무      ${esc(r.n)}`,
+                `수입      ${r.pay > 0 ? '+' + r.pay + '만원' : '±0'}`,
+                `특이사항    ${esc(r.note || '')}${r.incident ? ' · ' + esc(r.incident) : ''}`,
+                `Mood     ${esc(rv.mood || '')}`
+            ].join('\n');
+            const tasks = (rv.tasks || []).map(t => `<li>${esc(t)}</li>`).join('');
+            detail = `<div class="sp-review">
+              <pre class="sp-rep-block">${block}</pre>
+              ${tasks ? `<div class="sp-tasks-lbl">한 일</div><ul class="sp-tasks">${tasks}</ul>` : ''}
+              ${rv.review ? `<div class="sp-jobrev"><span class="jr-lbl">알바 리뷰</span> “${esc(rv.review)}”</div>` : ''}
+              <div class="sp-rep-foot"><span class="sp-stars">${stars}</span></div>
+            </div>`;
+        } else detail = '<div class="sp-review"><div class="sp-loading"><span class="sp-spin"></span> 후기 뽑는 중…</div></div>';
     }
     return `<div class="sp-logrow ${open ? 'open' : ''}" data-act="logopen" data-id="${r.id}">
       <span class="li-ic">${esc(r.ic || '•')}</span>
@@ -650,9 +647,9 @@ async function onAction(e) {
         const id = el.dataset.id, entry = (cs.workLog || []).find(x => String(x.id) === String(id)); if (!entry) return;
         if (String(ui.openLog) === String(entry.id)) { ui.openLog = null; render(); return; }
         ui.openLog = entry.id; render();
-        if (!entry.review || !entry.review.scene) {
+        if (!entry.review || !entry.review.tasks) {
             const rv = await genReview(cs, entry);
-            if (rv) { entry.review = { stars: Math.max(1, Math.min(5, parseInt(rv.stars) || 3)), before: rv.before || '', scene: rv.scene || '', mood: rv.mood || '', rn: rv.rn || '' }; saveState(); }
+            if (rv) { entry.review = { stars: Math.max(1, Math.min(5, parseInt(rv.stars) || 3)), before: rv.before || '', tasks: Array.isArray(rv.tasks) ? rv.tasks : [], review: rv.review || '', mood: rv.mood || '' }; saveState(); }
             if (String(ui.openLog) === String(entry.id)) render();
         }
     }
